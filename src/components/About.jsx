@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 
 const PILLARS = [
@@ -19,6 +19,13 @@ const PILLARS = [
   },
 ];
 
+// Two video sources — swap in your second clip URL below
+const VIDEO_SRCS = [
+  "https://res.cloudinary.com/dgjcl0te0/video/upload/q_auto/f_auto/v1780574431/droneshots2_rdkfka.mp4",
+  "https://res.cloudinary.com/dgjcl0te0/video/upload/q_auto/f_auto/v1780575852/canyonshots_iln33i.mp4", // ← replace with your second clip
+];
+
+const CROSSFADE_DURATION = 1200; // ms — duration of the opacity transition
 
 export default function About() {
   const sectionRef = useRef(null);
@@ -33,6 +40,70 @@ export default function About() {
 
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
 
+  // ── Video crossfade logic ──────────────────────────────────────────────────
+  const [activeIndex, setActiveIndex] = useState(0);
+  const videoRefs = [useRef(null), useRef(null)];
+  const crossfadingRef = useRef(false);
+
+  // Preload the inactive video so the crossfade is seamless
+  useEffect(() => {
+    const inactive = videoRefs[activeIndex === 0 ? 1 : 0].current;
+    if (inactive) {
+      inactive.currentTime = 0;
+      inactive.load();
+    }
+  }, [activeIndex]);
+
+  const handleVideoEnding = (idx) => {
+    // "timeupdate" listener — fires ~CROSSFADE_DURATION ms before the end
+    return function () {
+      const vid = videoRefs[idx].current;
+      if (!vid || crossfadingRef.current) return;
+      if (vid.duration - vid.currentTime <= CROSSFADE_DURATION / 1000) {
+        crossfadingRef.current = true;
+
+        const nextIdx = idx === 0 ? 1 : 0;
+        const nextVid = videoRefs[nextIdx].current;
+        if (nextVid) {
+          nextVid.currentTime = 0;
+          nextVid.play().catch(() => {});
+        }
+
+        // Switch active after the crossfade
+        setTimeout(() => {
+          setActiveIndex(nextIdx);
+          crossfadingRef.current = false;
+        }, CROSSFADE_DURATION);
+      }
+    };
+  };
+
+  useEffect(() => {
+    const handlers = videoRefs.map((ref, idx) => {
+      const handler = handleVideoEnding(idx);
+      ref.current?.addEventListener("timeupdate", handler);
+      return handler;
+    });
+
+    return () => {
+      videoRefs.forEach((ref, idx) => {
+        ref.current?.removeEventListener("timeupdate", handlers[idx]);
+      });
+    };
+  }, []);
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const sharedVideoStyle = {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    filter: "brightness(0.45) saturate(0.9)",
+    zIndex: 0,
+    transition: `opacity ${CROSSFADE_DURATION}ms ease`,
+  };
+
   return (
     <section
       id="about"
@@ -44,23 +115,27 @@ export default function About() {
         padding: "140px 0 160px",
       }}
     >
-      {/* Video background */}
+      {/* ── Video A ── */}
       <video
+        ref={videoRefs[0]}
         autoPlay
         muted
-        loop
         playsInline
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          filter: "brightness(0.25) saturate(0.8)",
-          zIndex: 0,
-        }}
+        preload="auto"
+        style={{ ...sharedVideoStyle, opacity: activeIndex === 0 ? 1 : 0 }}
       >
-        <source src="https://res.cloudinary.com/dgjcl0te0/video/upload/q_auto/f_auto/v1780574431/droneshots2_rdkfka.mp4" type="video/mp4" />
+        <source src={VIDEO_SRCS[0]} type="video/mp4" />
+      </video>
+
+      {/* ── Video B ── */}
+      <video
+        ref={videoRefs[1]}
+        muted
+        playsInline
+        preload="auto"
+        style={{ ...sharedVideoStyle, opacity: activeIndex === 1 ? 1 : 0 }}
+      >
+        <source src={VIDEO_SRCS[1]} type="video/mp4" />
       </video>
 
       {/* Dark gradient overlay */}
@@ -68,7 +143,7 @@ export default function About() {
         style={{
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(to bottom, rgba(8,8,8,0.6) 0%, rgba(8,8,8,0.4) 50%, rgba(8,8,8,0.75) 100%)",
+          background: "linear-gradient(to bottom, rgba(8,8,8,0.4) 0%, rgba(8,8,8,0.2) 50%, rgba(8,8,8,0.55) 100%)",
           zIndex: 1,
           pointerEvents: "none",
         }}
@@ -163,7 +238,6 @@ export default function About() {
             >
               Come Make We Go
             </h2>
-
           </div>
         </motion.div>
 

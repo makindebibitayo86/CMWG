@@ -1,10 +1,12 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 
-const places = [
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymZhP0z99_-8kmI_nIKix3CHPs6rKsUoLqaa67u8NjfoN7wJq-yyQMe1Gso1eroVPMbw/exec'
+
+const FALLBACK_PLACES = [
   {
     title: 'Lagos City Escape',
     desc: 'Urban energy, beaches, nightlife',
-    img: 'https://images.unsplash.com/photo-1545987796-200677ee1011?auto=format&fit=crop&w=1200&q=80',
+    img: 'https://res.cloudinary.com/dgjcl0te0/image/upload/q_auto/f_auto/v1780581204/lagos_bo1dux.png',
     video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/lagos.mp4',
     category: 'City',
     highlights: ['Lekki Beach', 'Victoria Island', 'Afrobeats nightlife', 'Street food culture'],
@@ -26,7 +28,7 @@ const places = [
   {
     title: 'Benin Royal Experience',
     desc: 'Ancient kingdoms and rich traditions',
-    img: 'https://images.unsplash.com/photo-1580902394775-20b71e96a3a4?auto=format&fit=crop&w=1200&q=80',
+    img: 'https://res.cloudinary.com/dgjcl0te0/image/upload/v1780581557/benin_rihdlk.jpg',
     video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/benin.mp4',
     category: 'Culture',
     highlights: ['Royal Palace Museum', 'Bronze artworks', 'Voodoo ceremonies', 'Ouidah Temple'],
@@ -111,17 +113,58 @@ const places = [
     duration: '4–6 days',
     tagline: 'Where the Atlantic meets the soul of West Africa.',
   },
+  {
+    title: 'Morocco Imperial Cities',
+    desc: 'Souks, riads, and desert gateways',
+    img: 'https://images.unsplash.com/photo-1539020140153-e479b8c22e70?auto=format&fit=crop&w=1200&q=80',
+    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/q_auto/f_auto/v1780579385/morocco_dzgd1a.mp4',
+    category: 'Culture',
+    highlights: ['Marrakech Medina', 'Fes el-Bali', 'Sahara Desert Edge', 'Atlas Mountains'],
+    bestTime: 'Mar – May',
+    duration: '6–9 days',
+    tagline: 'A labyrinth of colour, spice, and a thousand years of history.',
+  },
+  {
+    title: 'Dubai City & Desert',
+    desc: 'Skyline excess meets ancient sands',
+    img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
+    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/q_auto/f_auto/v1780579462/dubai_ce9kty.mp4',
+    category: 'City',
+    highlights: ['Burj Khalifa', 'Desert Safari', 'Gold & Spice Souks', 'Palm Jumeirah'],
+    bestTime: 'Nov – Mar',
+    duration: '4–6 days',
+    tagline: 'Where the future was built overnight on top of ancient desert.',
+  },
 ]
 
 function BookingForm({ destination, onClose }) {
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '', email: '', date: '', travellers: '1', budget: '', message: ''
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setSubmitted(true)
+    setLoading(true)
+    setError('')
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destination: destination.title,
+          ...form,
+        }),
+      })
+      setSubmitted(true)
+    } catch (err) {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (submitted) {
@@ -200,7 +243,9 @@ function BookingForm({ destination, onClose }) {
         />
       </div>
 
-      <button type="submit" className="btn-book">Book Now</button>
+      <button type="submit" className="btn-book" disabled={loading}>
+        {loading ? 'Sending…' : 'Book Now'}
+      </button>
     </form>
   )
 }
@@ -234,6 +279,7 @@ function Modal({ place, onClose }) {
               muted
               loop
               playsInline
+              preload="auto"
               className="modal-video"
               onCanPlay={(e) => e.target.classList.add('ready')}
             />
@@ -290,8 +336,31 @@ export default function Destinations() {
   const videoRefs = useRef({})
   const [activeCategory, setActiveCategory] = useState('All')
   const [activeModal, setActiveModal] = useState(null)
+  const [places, setPlaces] = useState(FALLBACK_PLACES)
+  const [loadingPlaces, setLoadingPlaces] = useState(true)
+  const [fetchError, setFetchError] = useState(null)
 
-  const categories = ['All', 'Safari', 'Beach', 'City', 'Culture']
+  useEffect(() => {
+    fetch(`${SCRIPT_URL}?action=getDestinations`)
+      .then(res => res.json())
+      .then(({ data }) => {
+        if (Array.isArray(data) && data.length > 0) {
+          // Normalise highlights: Sheet may send a pipe-separated string
+          const normalised = data.map(d => ({
+            ...d,
+            highlights: typeof d.highlights === 'string'
+              ? d.highlights.split('|').map(s => s.trim()).filter(Boolean)
+              : d.highlights || [],
+          }))
+          setPlaces(normalised)
+        }
+      })
+      .catch(() => setFetchError('Could not load destinations from Sheet — showing defaults.'))
+      .finally(() => setLoadingPlaces(false))
+  }, [])
+
+  // Derive categories dynamically from loaded places
+  const categories = ['All', ...Array.from(new Set(places.map(p => p.category))).sort()]
 
   const filtered = activeCategory === 'All'
     ? places
@@ -318,6 +387,19 @@ export default function Destinations() {
     const walk = (e.pageX - el.offsetLeft) - drag.current.startX
     drag.current.velocity = walk * 0.15
     el.scrollLeft = drag.current.scrollLeft - walk
+  }
+
+  const preloadedLinks = useRef({})
+
+  const preloadVideo = (place) => {
+    if (place.video && !preloadedLinks.current[place.title]) {
+      preloadedLinks.current[place.title] = true
+      const link = document.createElement('link')
+      link.rel = 'preload'
+      link.as = 'video'
+      link.href = place.video
+      document.head.appendChild(link)
+    }
   }
 
   const playVideo = (title) => { videoRefs.current[title]?.play().catch(() => {}) }
@@ -347,6 +429,12 @@ export default function Destinations() {
         </div>
       </div>
 
+      {fetchError && (
+        <p style={{ color: '#c9a84c', fontSize: '0.8rem', marginBottom: '1rem', opacity: 0.7 }}>
+          {fetchError}
+        </p>
+      )}
+
       <div
         className="destinations__scroll"
         ref={scrollRef}
@@ -355,12 +443,23 @@ export default function Destinations() {
         onMouseLeave={onUp}
         onMouseMove={onMove}
       >
-        {filtered.map((place) => (
+        {loadingPlaces
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="card card--skeleton">
+                <div className="media skeleton-media" />
+                <div className="content">
+                  <div className="skeleton-line" style={{ width: '40%', height: '0.6rem', marginBottom: '0.6rem' }} />
+                  <div className="skeleton-line" style={{ width: '80%', height: '1.2rem', marginBottom: '0.4rem' }} />
+                  <div className="skeleton-line" style={{ width: '60%', height: '0.8rem' }} />
+                </div>
+              </div>
+            ))
+          : filtered.map((place) => (
           <div
             key={place.title}
             className="card"
             onClick={() => setActiveModal(place)}
-            onMouseEnter={() => playVideo(place.title)}
+            onMouseEnter={() => { preloadVideo(place); playVideo(place.title) }}
             onMouseLeave={() => pauseVideo(place.title)}
           >
             <div className="media">
@@ -381,7 +480,8 @@ export default function Destinations() {
               <button className="card-cta">Explore →</button>
             </div>
           </div>
-        ))}
+        ))
+      }
       </div>
 
       {activeModal && (
@@ -465,8 +565,8 @@ export default function Destinations() {
         .destinations__scroll::-webkit-scrollbar { display: none; }
 
         .card {
-          min-width: 300px;
-          max-width: 300px;
+          min-width: 380px;
+          max-width: 380px;
           scroll-snap-align: start;
           background: rgba(255,255,255,0.03);
           border: 1px solid rgba(255,255,255,0.07);
@@ -476,6 +576,22 @@ export default function Destinations() {
           flex-shrink: 0;
         }
 
+
+        /* Skeleton loading state */
+        @keyframes shimmer {
+          0% { background-position: -600px 0; }
+          100% { background-position: 600px 0; }
+        }
+        .skeleton-media,
+        .skeleton-line {
+          background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+          background-size: 600px 100%;
+          animation: shimmer 1.4s infinite linear;
+          border-radius: 2px;
+        }
+        .card--skeleton { pointer-events: none; }
+        .skeleton-media { width: 100%; height: 100%; position: absolute; inset: 0; }
+
         .card:hover {
           border-color: rgba(201,168,76,0.4);
           transform: translateY(-4px);
@@ -483,7 +599,7 @@ export default function Destinations() {
 
         .media {
           position: relative;
-          height: 210px;
+          height: 280px;
           overflow: hidden;
         }
 
@@ -819,6 +935,12 @@ export default function Destinations() {
         }
 
         .btn-book:hover { background: #e0bc60; }
+        .btn-book:disabled {
+          background: rgba(201,168,76,0.35);
+          color: rgba(0,0,0,0.5);
+          cursor: not-allowed;
+          transform: none;
+        }
         .btn-book:active { transform: scale(0.99); }
 
         /* Success state */

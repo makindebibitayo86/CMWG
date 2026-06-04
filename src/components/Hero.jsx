@@ -52,7 +52,7 @@ function Hero() {
             <p>Curated travel packages</p>
           </a>
 
-          <a href="#experiences" className="hero__card">
+          <a href="#destinations" className="hero__card">
             <h3>Excursions</h3>
             <p>Guided local experiences</p>
           </a>
@@ -91,7 +91,7 @@ function Hero() {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          filter: brightness(0.7) contrast(1.15) saturate(1.1);
+          filter: brightness(0.7) contrast(1.15) saturate(0.9);
           transform: scale(1.1);
           animation: zoom 25s ease-in-out infinite alternate;
         }
@@ -108,10 +108,10 @@ function Hero() {
           z-index: 1;
           background: radial-gradient(
               circle at 50% 40%,
-              rgba(0,0,0,0.2),
-              rgba(0,0,0,0.85)
+              rgba(0,0,0,0.1),
+              rgba(0,0,0,0.6)
             ),
-            linear-gradient(to top, rgba(0,0,0,0.9), transparent 60%);
+            linear-gradient(to top, rgba(0,0,0,0.7), transparent 60%);
         }
 
         /* LAYOUT */
@@ -165,6 +165,8 @@ function Hero() {
           flex-direction: column;
           gap: 1rem;
           min-width: 260px;
+          align-self: flex-start;
+          margin-top: 3.2rem;
         }
 
         .hero__card {
