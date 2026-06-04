@@ -4,8 +4,8 @@ const places = [
   {
     title: 'Lagos City Escape',
     desc: 'Urban energy, beaches, nightlife',
-    img: 'https://images.unsplash.com/photo-1526401485004-2aa7c8e5f9f2?auto=format&fit=crop&w=1200&q=80',
-    video: '/videos/lagos.mp4',
+    img: 'https://images.unsplash.com/photo-1545987796-200677ee1011?auto=format&fit=crop&w=1200&q=80',
+    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/lagos.mp4',
     category: 'City',
     highlights: ['Lekki Beach', 'Victoria Island', 'Afrobeats nightlife', 'Street food culture'],
     bestTime: 'Nov – Feb',
@@ -16,7 +16,7 @@ const places = [
     title: 'Ghana Heritage Journey',
     desc: 'Culture, history, and coastal rhythm',
     img: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80',
-    video: '/videos/ghana.mp4',
+    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/ghana.mp4',
     category: 'Culture',
     highlights: ['Cape Coast Castle', 'Kakum Canopy Walk', 'Ashanti Kingdom', 'Accra Markets'],
     bestTime: 'Oct – Mar',
@@ -26,8 +26,8 @@ const places = [
   {
     title: 'Benin Royal Experience',
     desc: 'Ancient kingdoms and rich traditions',
-    img: 'https://images.unsplash.com/photo-1524412529637-208d6e5a6f3f?auto=format&fit=crop&w=1200&q=80',
-    video: '/videos/benin.mp4',
+    img: 'https://images.unsplash.com/photo-1580902394775-20b71e96a3a4?auto=format&fit=crop&w=1200&q=80',
+    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/benin.mp4',
     category: 'Culture',
     highlights: ['Royal Palace Museum', 'Bronze artworks', 'Voodoo ceremonies', 'Ouidah Temple'],
     bestTime: 'Dec – Apr',
@@ -38,7 +38,7 @@ const places = [
     title: 'Tanzania Safari Expedition',
     desc: 'Wildlife, savannahs, and national parks',
     img: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=80',
-    video: '/videos/tanzania.mp4',
+    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/tanzania.mp4',
     category: 'Safari',
     highlights: ['Serengeti Migration', 'Ngorongoro Crater', 'Mount Kilimanjaro', 'Maasai Villages'],
     bestTime: 'Jun – Oct',
@@ -49,7 +49,7 @@ const places = [
     title: 'Cape Town Coastline',
     desc: 'Mountains meeting the ocean',
     img: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
-    video: '/videos/capetown.mp4',
+    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/capetown.mp4',
     category: 'Beach',
     highlights: ['Table Mountain', 'Boulders Penguin Colony', 'Cape Winelands', 'Clifton Beaches'],
     bestTime: 'Oct – Apr',
@@ -60,7 +60,7 @@ const places = [
     title: 'Zanzibar Escape',
     desc: 'Turquoise waters and island calm',
     img: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80',
-    video: '/videos/zanzibar.mp4',
+    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/zanzibar.mp4',
     category: 'Beach',
     highlights: ['Stone Town UNESCO Site', 'Mnemba Atoll Diving', 'Spice Plantations', 'Nungwi Beach'],
     bestTime: 'Jun – Oct',
@@ -71,7 +71,7 @@ const places = [
     title: 'Sahara Desert Ride',
     desc: 'Golden dunes and endless horizons',
     img: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80',
-    video: '/videos/sahara.mp4',
+    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/sahara.mp4',
     category: 'Safari',
     highlights: ['Erg Chebbi Dunes', 'Camel Trekking', 'Berber Camps', 'Stargazing Nights'],
     bestTime: 'Oct – Apr',
@@ -82,7 +82,7 @@ const places = [
     title: 'Nairobi Safari Hub',
     desc: 'Wildlife parks and city nature blend',
     img: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
-    video: '/videos/nairobi.mp4',
+    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/nairobi.mp4',
     category: 'Safari',
     highlights: ['Nairobi National Park', 'Giraffe Centre', 'Karen Blixen Museum', 'David Sheldrick'],
     bestTime: 'Jul – Sep',
@@ -93,7 +93,7 @@ const places = [
     title: 'Victoria Falls Wonder',
     desc: 'One of the world\'s greatest waterfalls',
     img: 'https://images.unsplash.com/photo-1587502537745-84b86da1204f?auto=format&fit=crop&w=1200&q=80',
-    video: '/videos/victoriafalls.mp4',
+    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/victoriafalls.mp4',
     category: 'Safari',
     highlights: ['Devil\'s Pool Swim', 'Bungee Jumping', 'Sunset Cruise', 'Rainforest Walk'],
     bestTime: 'Feb – May',
@@ -104,7 +104,7 @@ const places = [
     title: 'Dakar Atlantic Coast',
     desc: 'Surf culture and ocean winds',
     img: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80',
-    video: '/videos/dakar.mp4',
+    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/dakar.mp4',
     category: 'Beach',
     highlights: ['Île de Gorée', 'Lac Rose', 'IFAN Museum', 'Yoff Beach Surfing'],
     bestTime: 'Nov – May',
@@ -327,7 +327,7 @@ export default function Destinations() {
   }
 
   return (
-    <section className="destinations">
+    <section className="destinations" id="destinations">
 
       <div className="destinations__header">
         <p className="section-eyebrow">Where to next</p>
@@ -558,7 +558,7 @@ export default function Destinations() {
         .modal-backdrop {
           position: fixed;
           inset: 0;
-          background: rgba(0,0,0,0.85);
+          background: rgba(0,0,0,0.93);
           z-index: 1000;
           display: flex;
           align-items: center;
@@ -604,8 +604,7 @@ export default function Destinations() {
         .modal-vignette {
           position: absolute;
           inset: 0;
-          background:
-            linear-gradient(to right, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.75) 100%);
+          background: rgba(0,0,0,0.75);
         }
 
         .modal-close {

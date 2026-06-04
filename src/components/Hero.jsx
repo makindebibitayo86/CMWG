@@ -19,7 +19,7 @@ function Hero() {
           loop
           playsInline
         >
-          <source src="/droneshots.webm" type="video/webm" />
+          <source src="https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/droneshots.webm" type="video/webm" />
         </video>
       </div>
 
@@ -47,7 +47,7 @@ function Hero() {
         {/* RIGHT ACTIONS */}
         <motion.div className="hero__right" {...fadeUp(0.5)}>
 
-          <a href="#book" className="hero__card">
+          <a href="#destinations" className="hero__card">
             <h3>Book Trips</h3>
             <p>Curated travel packages</p>
           </a>
@@ -67,6 +67,8 @@ function Hero() {
       </div>
 
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
+
         .hero {
           position: relative;
           min-height: 100svh;
@@ -75,6 +77,7 @@ function Hero() {
           padding: 120px 6vw;
           overflow: hidden;
           color: white;
+          font-family: 'Montserrat', sans-serif;
         }
 
         /* VIDEO */
@@ -129,16 +132,19 @@ function Hero() {
 
         .hero__eyebrow {
           font-size: 0.7rem;
-          letter-spacing: 0.25em;
+          letter-spacing: 0.28em;
           text-transform: uppercase;
           opacity: 0.7;
+          font-weight: 600;
         }
 
         .hero__title {
-          font-size: clamp(2.8rem, 6vw, 5.5rem);
-          font-weight: 600;
+          font-family: 'Cormorant Garamond', serif;
+          font-size: clamp(3.5rem, 7vw, 6.5rem);
+          font-weight: 400;
           line-height: 1.05;
           margin: 1rem 0;
+          letter-spacing: -0.01em;
         }
 
         .hero__title span {
@@ -149,6 +155,8 @@ function Hero() {
           font-size: 1.05rem;
           line-height: 1.7;
           opacity: 0.65;
+          font-weight: 300;
+          letter-spacing: 0.01em;
         }
 
         /* RIGHT CARDS */
@@ -178,12 +186,16 @@ function Hero() {
         .hero__card h3 {
           margin: 0;
           font-size: 1rem;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
         }
 
         .hero__card p {
           margin: 0.3rem 0 0;
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           opacity: 0.6;
+          font-weight: 300;
         }
 
         /* MOBILE */
