@@ -856,12 +856,55 @@ function MerchEditor({ data, onChange }) {
   }
 
   const ALL_FIELDS = ['sleeve','size','height','age','note']
-  const updateImg = (i,v) => { const imgs=[...(form.imgs||[])]; imgs[i]=v; updateForm({imgs}) }
-  const addImg = () => updateForm({imgs:[...(form.imgs||[]),'']})
-  const removeImg = (i) => updateForm({imgs:(form.imgs||[]).filter((_,idx)=>idx!==i)})
+  const [activeImg, setActiveImg] = useState(0)
+  const imgInputRefs = useRef({})
+  const addSlotRef = useRef(null)
+
+  const updateImg = (i,v) => { const imgs=[...(form?.imgs||[])]; imgs[i]=v; updateForm({imgs}); setActiveImg(i) }
+  const removeImg = (i) => {
+    const imgs = [...(form?.imgs||[])]
+    imgs[i] = ''
+    updateForm({imgs})
+    // stay on this slot so the empty upload prompt is immediately visible
+  }
   const toggleField = (f) => {
-    const fields = (form.fields||[]).includes(f)?(form.fields||[]).filter(x=>x!==f):[...(form.fields||[]),f]
+    const fields = (form?.fields||[]).includes(f)?(form?.fields||[]).filter(x=>x!==f):[...(form?.fields||[]),f]
     updateForm({fields})
+  }
+
+  const [uploadingSlots, setUploadingSlots] = useState(new Set())
+
+  const setSlotLoading = (i, on) => setUploadingSlots(prev => {
+    const s = new Set(prev); on ? s.add(i) : s.delete(i); return s
+  })
+
+  const uploadToCloudinary = async (file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('upload_preset', CLOUDINARY_PRESET)
+    fd.append('folder', 'cmwg')
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:'POST', body:fd })
+    const d = await res.json()
+    return d.secure_url || null
+  }
+
+  const handleImgFile = async (i, file) => {
+    if (!file) return
+    setSlotLoading(i, true)
+    const url = await uploadToCloudinary(file).catch(()=>null)
+    setSlotLoading(i, false)
+    if (url) updateImg(i, url)
+  }
+
+  const handleAddFile = async (file) => {
+    if (!file) return
+    const next = (form?.imgs||[]).length
+    updateForm({imgs:[...(form?.imgs||[]),'']})
+    setActiveImg(next)
+    setSlotLoading(next, true)
+    const url = await uploadToCloudinary(file).catch(()=>null)
+    setSlotLoading(next, false)
+    if (url) { updateImg(next, url) }
   }
 
   return (
@@ -884,16 +927,123 @@ function MerchEditor({ data, onChange }) {
           </div>
           <Field label="Description" value={form.desc} onChange={v=>updateForm({desc:v})} rows={2} />
 
-          <div style={S.subHead}><span>⬡</span> Product Images (up to 3)</div>
-          {(form.imgs||[]).map((img,i) => (
-            <div key={i} style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
-              <div style={{ flex:1 }}>
-                <CloudinaryUpload label={`Image ${i+1}`} value={img} onChange={v=>updateImg(i,v)} />
+          <div style={S.subHead}><span>⬡</span> Product Images (up to 6)</div>
+
+          {/* ── GALLERY PREVIEW ── */}
+          <div style={{ marginBottom:20 }}>
+            {/* Main preview */}
+            <div style={{
+              position:'relative', width:'100%', height:220,
+              background:'#080810', border:'1px solid rgba(255,255,255,.07)',
+              borderRadius:8, overflow:'hidden', marginBottom:10,
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}>
+              {uploadingSlots.has(activeImg) ? (
+                /* Full main shimmer while uploading */
+                <div style={{ position:'absolute', inset:0, background:'rgba(255,255,255,.03)', overflow:'hidden' }}>
+                  <div style={{
+                    position:'absolute', inset:0,
+                    background:'linear-gradient(90deg, transparent 0%, rgba(201,168,76,.08) 50%, transparent 100%)',
+                    animation:'adminShimmer 1.4s infinite',
+                  }} />
+                  <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12 }}>
+                    <div style={{ width:28, height:28, border:'2px solid rgba(201,168,76,.15)', borderTop:'2px solid #c9a84c', borderRadius:'50%', animation:'spin .7s linear infinite' }} />
+                    <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.2em', color:'rgba(201,168,76,.5)', textTransform:'uppercase' }}>Uploading…</span>
+                  </div>
+                </div>
+              ) : (form?.imgs||[])[activeImg] ? (
+                <img src={(form?.imgs||[])[activeImg]} alt="" style={{ width:'100%', height:'100%', objectFit:'contain' }} />
+              ) : (
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, opacity:0.25 }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                  <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.15em', color:'#c9a84c' }}>No image</span>
+                </div>
+              )}
+              {/* Action buttons on main preview */}
+              <input ref={el=>imgInputRefs.current[activeImg]=el} type="file" accept="image/*" style={{ display:'none' }}
+                onChange={e=>{ handleImgFile(activeImg, e.target.files[0]); e.target.value='' }} />
+              <div style={{ position:'absolute', top:8, right:8, display:'flex', gap:6 }}>
+                {/* Upload / replace button — always visible */}
+                <button onClick={()=>imgInputRefs.current[activeImg]?.click()} style={{
+                  background:'rgba(0,0,0,.7)', border:'1px solid rgba(201,168,76,.35)',
+                  color:'rgba(201,168,76,.8)', width:26, height:26, borderRadius:5,
+                  cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                  transition:'all .15s',
+                }} onMouseEnter={e=>{e.currentTarget.style.color='#c9a84c';e.currentTarget.style.borderColor='rgba(201,168,76,.7)'}}
+                   onMouseLeave={e=>{e.currentTarget.style.color='rgba(201,168,76,.8)';e.currentTarget.style.borderColor='rgba(201,168,76,.35)'}}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </button>
+                {/* Delete — only when slot has an image */}
+                {(form?.imgs||[])[activeImg] && (
+                  <button onClick={()=>removeImg(activeImg)} style={{
+                    background:'rgba(0,0,0,.7)', border:'1px solid rgba(244,67,54,.3)',
+                    color:'rgba(244,67,54,.7)', width:26, height:26, borderRadius:5,
+                    cursor:'pointer', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center',
+                    fontFamily:"'DM Mono',monospace", transition:'all .15s',
+                  }} onMouseEnter={e=>{e.currentTarget.style.color='#e57373';e.currentTarget.style.borderColor='rgba(244,67,54,.6)'}}
+                     onMouseLeave={e=>{e.currentTarget.style.color='rgba(244,67,54,.7)';e.currentTarget.style.borderColor='rgba(244,67,54,.3)'}}>✕</button>
+                )}
               </div>
-              <button onClick={()=>removeImg(i)} style={{ ...S.delBtn, marginTop:22 }}>✕</button>
             </div>
-          ))}
-          {(form.imgs||[]).length < 3 && <button onClick={addImg} style={{ ...S.addBtn, fontSize:9, marginBottom:20 }}>+ Add Image</button>}
+
+            {/* Thumb strip */}
+            <div style={{ display:'flex', gap:8, overflowX:'auto', paddingBottom:4, scrollbarWidth:'none' }}>
+              {(form?.imgs||[]).map((src,i) => {
+                const isActive = activeImg === i
+                return (
+                  <div key={i} style={{
+                    flex:'0 0 72px', height:72,
+                    position:'relative', cursor:'pointer',
+                    border:`1px solid ${isActive?'#c9a84c': uploadingSlots.has(i) ? 'rgba(201,168,76,.4)' : 'rgba(255,255,255,.08)'}`,
+                    borderRadius:5, overflow:'hidden',
+                    background:'#080810', transition:'border-color .2s', flexShrink:0,
+                  }}
+                    onClick={() => setActiveImg(i)}
+                  >
+                    {uploadingSlots.has(i) ? (
+                      /* Shimmer loading state */
+                      <div style={{ width:'100%', height:'100%', background:'rgba(255,255,255,.04)', position:'relative', overflow:'hidden' }}>
+                        <div style={{
+                          position:'absolute', inset:0,
+                          background:'linear-gradient(90deg, transparent 0%, rgba(201,168,76,.12) 50%, transparent 100%)',
+                          animation:'adminShimmer 1.4s infinite',
+                        }} />
+                        <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                          <div style={{ width:16, height:16, border:'1.5px solid rgba(201,168,76,.2)', borderTop:'1.5px solid #c9a84c', borderRadius:'50%', animation:'spin .7s linear infinite' }} />
+                        </div>
+                      </div>
+                    ) : src ? (
+                      <img src={src} alt="" style={{ width:'100%', height:'100%', objectFit:'contain', display:'block' }} />
+                    ) : (
+                      <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* Add slot */}
+              {(form?.imgs||[]).length < 6 && (
+                <div style={{
+                  flex:'0 0 72px', height:72, flexShrink:0,
+                  border:'1px dashed rgba(201,168,76,.3)',
+                  borderRadius:5, cursor:'pointer',
+                  display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4,
+                  background:'rgba(201,168,76,.03)', transition:'all .18s',
+                }}
+                  onClick={()=>addSlotRef.current?.click()}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(201,168,76,.6)';e.currentTarget.style.background='rgba(201,168,76,.07)'}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(201,168,76,.3)';e.currentTarget.style.background='rgba(201,168,76,.03)'}}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" strokeWidth="2" opacity="0.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span style={{ fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'0.12em', color:'rgba(201,168,76,.6)' }}>add</span>
+                  <input ref={addSlotRef} type="file" accept="image/*" style={{ display:'none' }}
+                    onChange={e=>{ handleAddFile(e.target.files[0]); e.target.value='' }} />
+                </div>
+              )}
+            </div>
+          </div>
 
           <div style={S.subHead}><span>⊡</span> Order Form Fields</div>
           <p style={{ color:'#2e2e48', fontSize:10, fontFamily:"'DM Mono',monospace", marginBottom:12, letterSpacing:'0.06em' }}>Toggle which fields appear in the order form</p>
@@ -1208,7 +1358,7 @@ function AdminPage() {
     try {
       await Promise.all([
         fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({ type:'save_destinations', destinations:data.destinations }) }),
-        fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({ type:'save_merch', merch:data.merch }) }),
+        fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({ type:'save_merch', merch:data.merch.map(m=>({...m,imgs:(m.imgs||[]).filter(Boolean)})) }) }),
       ])
       showToast('Changes saved successfully ✓')
       setDirty(false)
@@ -1240,6 +1390,7 @@ function AdminPage() {
         ::-webkit-scrollbar-thumb { background:#1e1e2e; border-radius:2px; }
         input, textarea, select { color-scheme:dark; }
         @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes adminShimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
         @keyframes toastIn { from{opacity:0;transform:translateY(12px) scale(.96)} to{opacity:1;transform:translateY(0) scale(1)} }
         @keyframes spin { to{transform:rotate(360deg)} }
         @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }

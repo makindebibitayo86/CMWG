@@ -584,7 +584,7 @@ export default function Merch() {
           inset: 0;
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
           transition: transform 0.5s ease, opacity 0.3s ease;
         }
 
@@ -608,10 +608,14 @@ export default function Merch() {
           gap: 0.6rem;
           flex-shrink: 0;
           height: 72px;
+          overflow-x: auto;
+          scrollbar-width: none;
         }
 
+        .m-thumbs::-webkit-scrollbar { display: none; }
+
         .m-thumb {
-          flex: 1;
+          flex: 0 0 72px;
           height: 72px;
           overflow: hidden;
           cursor: pointer;
@@ -628,7 +632,7 @@ export default function Merch() {
           inset: 0;
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
           transition: transform 0.3s;
         }
 
