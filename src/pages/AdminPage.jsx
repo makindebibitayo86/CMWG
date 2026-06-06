@@ -289,7 +289,91 @@ function Field({ label, value, onChange, type='text', rows, placeholder }) {
   )
 }
 
-// ─── PILL ─────────────────────────────────────────────────────────────────────
+// ─── CLOUDINARY UPLOAD ───────────────────────────────────────────────────────
+
+const CLOUDINARY_CLOUD = 'dgjcl0te0'
+const CLOUDINARY_PRESET = 'doxjq87c'
+
+function CloudinaryUpload({ label, value, onChange }) {
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+  const inputRef = useRef(null)
+
+  const handleFile = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploading(true)
+    setError('')
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('upload_preset', CLOUDINARY_PRESET)
+    fd.append('folder', 'cmwg')
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:'POST', body:fd })
+      const data = await res.json()
+      if (data.secure_url) {
+        onChange(data.secure_url)
+      } else {
+        setError('Upload failed')
+      }
+    } catch {
+      setError('Upload failed')
+    }
+    setUploading(false)
+    e.target.value = ''
+  }
+
+  return (
+    <div style={{ marginBottom:16 }}>
+      <label style={{ display:'block', fontSize:9, letterSpacing:'0.22em', color:'#3a3a50', textTransform:'uppercase', marginBottom:6, fontFamily:"'DM Mono',monospace", fontWeight:500 }}>{label}</label>
+      <div style={{ display:'flex', gap:8, alignItems:'flex-start', flexDirection:'column' }}>
+        {/* URL input */}
+        <input
+          type="text" value={value} onChange={e=>onChange(e.target.value)}
+          placeholder="https://... or upload below"
+          style={{
+            width:'100%', background:'#090910', border:'1px solid #1a1a28',
+            borderRadius:7, color:'#d8d0c8', fontFamily:"'DM Mono',monospace",
+            fontSize:12, padding:'10px 12px', boxSizing:'border-box', outline:'none',
+            transition:'all .18s', letterSpacing:'0.02em',
+          }}
+          onFocus={e=>e.target.style.borderColor='#c9a84c'}
+          onBlur={e=>e.target.style.borderColor='#1a1a28'}
+        />
+        {/* Upload button */}
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <button
+            onClick={()=>inputRef.current?.click()}
+            disabled={uploading}
+            style={{
+              background: uploading ? 'rgba(201,168,76,.1)' : 'transparent',
+              border:'1px solid rgba(201,168,76,.35)',
+              color: uploading ? '#8a7030' : '#c9a84c',
+              padding:'6px 14px', borderRadius:6, cursor: uploading?'not-allowed':'pointer',
+              fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.14em',
+              display:'flex', alignItems:'center', gap:6, transition:'all .15s',
+            }}
+          >
+            {uploading
+              ? <><span style={{ display:'inline-block', width:8, height:8, border:'1px solid #8a7030', borderTop:'1px solid #c9a84c', borderRadius:'50%', animation:'spin .6s linear infinite' }} /> Uploading…</>
+              : <>↑ Upload Image</>
+            }
+          </button>
+          {error && <span style={{ color:'#e57373', fontFamily:"'DM Mono',monospace", fontSize:10 }}>{error}</span>}
+        </div>
+        <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} style={{ display:'none' }} />
+        {/* Preview */}
+        {value && (
+          <div style={{ width:'100%', borderRadius:7, overflow:'hidden', height:100, marginTop:2 }}>
+            <img src={value} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>e.target.style.display='none'} />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+
 
 function Pill({ label }) {
   if (!label) return null
@@ -584,12 +668,13 @@ function HeroEditor({ data, onChange }) {
 
 function DestinationsEditor({ data, onChange }) {
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState(null)
 
-  const openEdit = (item) => { setEditing(item.id); setForm(deepClone(item)) }
-  const closeEdit = () => { setEditing(null); setForm(null) }
-  const saveEdit = () => { onChange(data.map(d=>d.id===form.id?form:d)); closeEdit() }
-  const deleteItem = (id) => onChange(data.filter(d=>d.id!==id))
+  const form = editing ? data.find(d => d.id === editing) : null
+
+  const openEdit = (item) => setEditing(item.id)
+  const closeEdit = () => setEditing(null)
+  const updateForm = (patch) => onChange(data.map(d => d.id === editing ? { ...d, ...patch } : d))
+  const deleteItem = (id) => { if (editing === id) setEditing(null); onChange(data.filter(d=>d.id!==id)) }
   const addNew = () => {
     const n = { id:Date.now(), title:'New Destination', desc:'', tagline:'', price:'', img:'', category:'West Africa' }
     onChange([...data,n]); openEdit(n)
@@ -612,10 +697,10 @@ function DestinationsEditor({ data, onChange }) {
             <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.16em', color:'#c9a84c', textTransform:'uppercase' }}>Editing: {form.title}</span>
           </div>
           <div style={S.grid2}>
-            <Field label="Title" value={form.title} onChange={v=>setForm({...form,title:v})} />
+            <Field label="Title" value={form.title} onChange={v=>updateForm({title:v})} />
             <div style={{ marginBottom:16 }}>
               <label style={{ display:'block', fontSize:9, letterSpacing:'0.22em', color:'#3a3a50', textTransform:'uppercase', marginBottom:6, fontFamily:"'DM Mono',monospace" }}>Category</label>
-              <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={{
+              <select value={form.category} onChange={e=>updateForm({category:e.target.value})} style={{
                 width:'100%', background:'#090910', border:'1px solid #1a1a28',
                 borderRadius:7, color:'#d8d0c8', fontFamily:"'DM Mono',monospace",
                 fontSize:12, padding:'10px 12px', outline:'none', cursor:'pointer',
@@ -624,20 +709,14 @@ function DestinationsEditor({ data, onChange }) {
               </select>
             </div>
           </div>
-          <Field label="Short description" value={form.desc} onChange={v=>setForm({...form,desc:v})} />
-          <Field label="Tagline (shown on card)" value={form.tagline} onChange={v=>setForm({...form,tagline:v})} rows={2} />
+          <Field label="Short description" value={form.desc} onChange={v=>updateForm({desc:v})} />
+          <Field label="Tagline (shown on card)" value={form.tagline} onChange={v=>updateForm({tagline:v})} rows={2} />
           <div style={S.grid2}>
-            <Field label="Price (optional)" value={form.price} onChange={v=>setForm({...form,price:v})} placeholder="e.g. $1,200" />
-            <Field label="Image URL" value={form.img} onChange={v=>setForm({...form,img:v})} placeholder="https://..." />
+            <Field label="Price (optional)" value={form.price} onChange={v=>updateForm({price:v})} placeholder="e.g. $1,200" />
           </div>
-          {form.img && (
-            <div style={{ marginBottom:16, borderRadius:8, overflow:'hidden', height:140 }}>
-              <img src={form.img} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>e.target.style.display='none'} />
-            </div>
-          )}
+          <CloudinaryUpload label="Destination Image" value={form.img} onChange={v=>updateForm({img:v})} />
           <div style={{ display:'flex', gap:10 }}>
-            <button onClick={saveEdit} style={S.saveBtn}>Save Changes</button>
-            <button onClick={closeEdit} style={S.cancelBtn}>Cancel</button>
+            <button onClick={closeEdit} style={S.cancelBtn}>Done</button>
           </div>
         </div>
       )}
@@ -689,31 +768,31 @@ function DestinationsEditor({ data, onChange }) {
 
 function MerchEditor({ data, onChange }) {
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState(null)
 
-  const openEdit = (item) => {
-    setEditing(item.id)
-    setForm({
-      ...deepClone(item),
-      imgs: Array.isArray(item.imgs)?item.imgs:(item.imgs||'').toString().split('|').filter(Boolean),
-      fields: Array.isArray(item.fields)?item.fields:(item.fields||'note').toString().split('|').filter(Boolean),
-    })
+  // form reads directly from data — no separate form state
+  const form = editing ? data.find(d => d.id === editing) : null
+
+  const openEdit = (item) => setEditing(item.id)
+  const closeEdit = () => setEditing(null)
+
+  // Every field change writes directly into parent data immediately
+  const updateForm = (patch) => {
+    onChange(data.map(d => d.id === editing ? { ...d, ...patch } : d))
   }
-  const closeEdit = () => { setEditing(null); setForm(null) }
-  const saveEdit = () => { onChange(data.map(d=>d.id===form.id?form:d)); closeEdit() }
-  const deleteItem = (id) => onChange(data.filter(d=>d.id!==id))
+
+  const deleteItem = (id) => { if (editing === id) setEditing(null); onChange(data.filter(d=>d.id!==id)) }
   const addNew = () => {
     const n = { id:Date.now(), name:'New Product', price:'$0', tag:'', desc:'', category:'Travel Gear', imgs:[], fields:['note'] }
-    onChange([...data,n]); openEdit(n)
+    onChange([...data, n]); openEdit(n)
   }
 
   const ALL_FIELDS = ['sleeve','size','height','age','note']
-  const updateImg = (i,v) => { const imgs=[...form.imgs]; imgs[i]=v; setForm({...form,imgs}) }
-  const addImg = () => setForm({...form,imgs:[...form.imgs,'']})
-  const removeImg = (i) => setForm({...form,imgs:form.imgs.filter((_,idx)=>idx!==i)})
+  const updateImg = (i,v) => { const imgs=[...(form.imgs||[])]; imgs[i]=v; updateForm({imgs}) }
+  const addImg = () => updateForm({imgs:[...(form.imgs||[]),'']})
+  const removeImg = (i) => updateForm({imgs:(form.imgs||[]).filter((_,idx)=>idx!==i)})
   const toggleField = (f) => {
-    const fields = form.fields.includes(f)?form.fields.filter(x=>x!==f):[...form.fields,f]
-    setForm({...form,fields})
+    const fields = (form.fields||[]).includes(f)?(form.fields||[]).filter(x=>x!==f):[...(form.fields||[]),f]
+    updateForm({fields})
   }
 
   return (
@@ -731,28 +810,25 @@ function MerchEditor({ data, onChange }) {
             <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.16em', color:'#c9a84c', textTransform:'uppercase' }}>Editing: {form.name}</span>
           </div>
           <div style={S.grid3}>
-            <Field label="Product name" value={form.name} onChange={v=>setForm({...form,name:v})} />
-            <Field label="Price" value={form.price} onChange={v=>setForm({...form,price:v})} placeholder="$35" />
-            <Field label="Tag (Bestseller / New)" value={form.tag} onChange={v=>setForm({...form,tag:v})} />
+            <Field label="Product name" value={form.name} onChange={v=>updateForm({name:v})} />
+            <Field label="Price" value={form.price} onChange={v=>updateForm({price:v})} placeholder="$35" />
+            <Field label="Tag (Bestseller / New)" value={form.tag} onChange={v=>updateForm({tag:v})} />
           </div>
           <div style={S.grid2}>
-            <Field label="Category" value={form.category} onChange={v=>setForm({...form,category:v})} placeholder="Clothing / Travel Gear" />
+            <Field label="Category" value={form.category} onChange={v=>updateForm({category:v})} placeholder="Clothing / Travel Gear" />
           </div>
-          <Field label="Description" value={form.desc} onChange={v=>setForm({...form,desc:v})} rows={2} />
+          <Field label="Description" value={form.desc} onChange={v=>updateForm({desc:v})} rows={2} />
 
           <div style={S.subHead}><span>⬡</span> Product Images (up to 3)</div>
-          {form.imgs.map((img,i) => (
-            <div key={i} style={{ display:'flex', gap:10, alignItems:'flex-end', marginBottom:8 }}>
+          {(form.imgs||[]).map((img,i) => (
+            <div key={i} style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
               <div style={{ flex:1 }}>
-                <Field label={`Image ${i+1} URL`} value={img} onChange={v=>updateImg(i,v)} placeholder="https://..." />
-                {img && <div style={{ marginTop:-8, marginBottom:10, borderRadius:6, overflow:'hidden', height:70 }}>
-                  <img src={img} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>e.target.style.display='none'} />
-                </div>}
+                <CloudinaryUpload label={`Image ${i+1}`} value={img} onChange={v=>updateImg(i,v)} />
               </div>
-              <button onClick={()=>removeImg(i)} style={{ ...S.delBtn, marginBottom:img?18:16 }}>✕</button>
+              <button onClick={()=>removeImg(i)} style={{ ...S.delBtn, marginTop:22 }}>✕</button>
             </div>
           ))}
-          {form.imgs.length < 3 && <button onClick={addImg} style={{ ...S.addBtn, fontSize:9, marginBottom:20 }}>+ Add Image</button>}
+          {(form.imgs||[]).length < 3 && <button onClick={addImg} style={{ ...S.addBtn, fontSize:9, marginBottom:20 }}>+ Add Image</button>}
 
           <div style={S.subHead}><span>⊡</span> Order Form Fields</div>
           <p style={{ color:'#2e2e48', fontSize:10, fontFamily:"'DM Mono',monospace", marginBottom:12, letterSpacing:'0.06em' }}>Toggle which fields appear in the order form</p>
@@ -760,9 +836,9 @@ function MerchEditor({ data, onChange }) {
             {ALL_FIELDS.map(f => (
               <button key={f} onClick={()=>toggleField(f)} style={{
                 padding:'6px 16px', borderRadius:20,
-                border:`1px solid ${form.fields.includes(f)?'rgba(201,168,76,.4)':'rgba(255,255,255,.08)'}`,
-                background: form.fields.includes(f)?'rgba(201,168,76,.1)':'transparent',
-                color: form.fields.includes(f)?'#c9a84c':'#3a3a50',
+                border:`1px solid ${(form.fields||[]).includes(f)?'rgba(201,168,76,.4)':'rgba(255,255,255,.08)'}`,
+                background: (form.fields||[]).includes(f)?'rgba(201,168,76,.1)':'transparent',
+                color: (form.fields||[]).includes(f)?'#c9a84c':'#3a3a50',
                 fontFamily:"'DM Mono',monospace", fontSize:10, cursor:'pointer',
                 textTransform:'capitalize', letterSpacing:'0.1em', transition:'all .15s',
               }}>{f}</button>
@@ -770,8 +846,7 @@ function MerchEditor({ data, onChange }) {
           </div>
 
           <div style={{ display:'flex', gap:10 }}>
-            <button onClick={saveEdit} style={S.saveBtn}>Save Changes</button>
-            <button onClick={closeEdit} style={S.cancelBtn}>Cancel</button>
+            <button onClick={closeEdit} style={S.cancelBtn}>Done</button>
           </div>
         </div>
       )}
@@ -1033,6 +1108,12 @@ function AdminPage() {
     setTimeout(() => setToast(null), 2800)
   }
 
+  // Set tab title
+  useEffect(() => {
+    document.title = 'CMWG Admin'
+    return () => { document.title = 'CMWG Travel — Explore the World' }
+  }, [])
+
   // Warn on tab close / refresh when there are unsaved changes
   useEffect(() => {
     const handler = (e) => {
@@ -1116,7 +1197,7 @@ function AdminPage() {
         {/* Left: breadcrumb */}
         <div style={{ display:'flex', alignItems:'center', gap:14 }}>
           <a href="/">
-            <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:48, display:'block' }} />
+            <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:40, display:'block' }} />
           </a>
           <div style={{ width:1, height:16, background:'rgba(255,255,255,.06)' }} />
           <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.2em', color:'#3a3a50', textTransform:'uppercase' }}>Admin Edit/Create</span>
