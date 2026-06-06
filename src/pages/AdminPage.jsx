@@ -664,6 +664,82 @@ function HeroEditor({ data, onChange }) {
   )
 }
 
+// ─── EDIT MODAL ──────────────────────────────────────────────────────────────
+
+function EditModal({ title, onClose, children }) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  const onBackdrop = (e) => { if (e.target === e.currentTarget) onClose() }
+
+  return (
+    <div onClick={onBackdrop} style={{
+      position:'fixed', inset:0, zIndex:500,
+      background:'rgba(0,0,0,.75)',
+      backdropFilter:'blur(6px)',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      padding:'24px',
+      animation:'fadeIn .2s ease',
+    }}>
+      <div style={{
+        width:'100%', maxWidth:680,
+        maxHeight:'90vh',
+        background:'linear-gradient(145deg,#0c0c14,#080810)',
+        border:'1px solid rgba(201,168,76,.2)',
+        borderRadius:14,
+        display:'flex', flexDirection:'column',
+        boxShadow:'0 40px 100px rgba(0,0,0,.8), 0 0 0 1px rgba(201,168,76,.05)',
+        overflow:'hidden',
+      }}>
+        {/* Modal header */}
+        <div style={{
+          display:'flex', alignItems:'center', justifyContent:'space-between',
+          padding:'18px 24px',
+          borderBottom:'1px solid rgba(255,255,255,.05)',
+          flexShrink:0,
+        }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:3, height:18, background:'#c9a84c', borderRadius:2 }} />
+            <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.2em', color:'#c9a84c', textTransform:'uppercase' }}>{title}</span>
+          </div>
+          <button onClick={onClose} style={{
+            background:'transparent', border:'1px solid rgba(255,255,255,.08)',
+            color:'#555', width:28, height:28, borderRadius:6,
+            cursor:'pointer', fontSize:12, display:'flex', alignItems:'center', justifyContent:'center',
+            transition:'all .15s', fontFamily:"'DM Mono',monospace",
+          }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(244,67,54,.4)'; e.currentTarget.style.color='#e57373'}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.08)'; e.currentTarget.style.color='#555'}}
+          >✕</button>
+        </div>
+        {/* Scrollable body */}
+        <div style={{ overflowY:'auto', padding:'24px', flex:1 }}>
+          {children}
+        </div>
+        {/* Modal footer */}
+        <div style={{
+          padding:'14px 24px',
+          borderTop:'1px solid rgba(255,255,255,.05)',
+          display:'flex', justifyContent:'flex-end', gap:10,
+          flexShrink:0,
+          background:'rgba(0,0,0,.2)',
+        }}>
+          <button onClick={onClose} style={{
+            background:'linear-gradient(135deg,#c9a84c,#e8c96a)',
+            border:'none', color:'#060608',
+            padding:'9px 28px', borderRadius:7, cursor:'pointer',
+            fontFamily:"'DM Mono',monospace", fontSize:10, fontWeight:700,
+            letterSpacing:'0.14em', textTransform:'uppercase',
+            boxShadow:'0 4px 16px rgba(201,168,76,.3)',
+          }}>Done</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── DESTINATIONS EDITOR ─────────────────────────────────────────────────────
 
 function DestinationsEditor({ data, onChange }) {
@@ -691,11 +767,7 @@ function DestinationsEditor({ data, onChange }) {
       />
 
       {editing && form && (
-        <div style={{ ...S.card, marginBottom:24, border:'1px solid rgba(201,168,76,.25)', background:'rgba(201,168,76,.03)' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:20 }}>
-            <div style={{ width:3, height:16, background:'#c9a84c', borderRadius:2 }} />
-            <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.16em', color:'#c9a84c', textTransform:'uppercase' }}>Editing: {form.title}</span>
-          </div>
+        <EditModal title={`Editing — ${form.title}`} onClose={closeEdit}>
           <div style={S.grid2}>
             <Field label="Title" value={form.title} onChange={v=>updateForm({title:v})} />
             <div style={{ marginBottom:16 }}>
@@ -715,10 +787,7 @@ function DestinationsEditor({ data, onChange }) {
             <Field label="Price (optional)" value={form.price} onChange={v=>updateForm({price:v})} placeholder="e.g. $1,200" />
           </div>
           <CloudinaryUpload label="Destination Image" value={form.img} onChange={v=>updateForm({img:v})} />
-          <div style={{ display:'flex', gap:10 }}>
-            <button onClick={closeEdit} style={S.cancelBtn}>Done</button>
-          </div>
-        </div>
+        </EditModal>
       )}
 
       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -804,11 +873,7 @@ function MerchEditor({ data, onChange }) {
       />
 
       {editing && form && (
-        <div style={{ ...S.card, marginBottom:24, border:'1px solid rgba(201,168,76,.25)', background:'rgba(201,168,76,.03)' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:20 }}>
-            <div style={{ width:3, height:16, background:'#c9a84c', borderRadius:2 }} />
-            <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.16em', color:'#c9a84c', textTransform:'uppercase' }}>Editing: {form.name}</span>
-          </div>
+        <EditModal title={`Editing — ${form.name}`} onClose={closeEdit}>
           <div style={S.grid3}>
             <Field label="Product name" value={form.name} onChange={v=>updateForm({name:v})} />
             <Field label="Price" value={form.price} onChange={v=>updateForm({price:v})} placeholder="$35" />
@@ -832,7 +897,7 @@ function MerchEditor({ data, onChange }) {
 
           <div style={S.subHead}><span>⊡</span> Order Form Fields</div>
           <p style={{ color:'#2e2e48', fontSize:10, fontFamily:"'DM Mono',monospace", marginBottom:12, letterSpacing:'0.06em' }}>Toggle which fields appear in the order form</p>
-          <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:20 }}>
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:8 }}>
             {ALL_FIELDS.map(f => (
               <button key={f} onClick={()=>toggleField(f)} style={{
                 padding:'6px 16px', borderRadius:20,
@@ -844,11 +909,7 @@ function MerchEditor({ data, onChange }) {
               }}>{f}</button>
             ))}
           </div>
-
-          <div style={{ display:'flex', gap:10 }}>
-            <button onClick={closeEdit} style={S.cancelBtn}>Done</button>
-          </div>
-        </div>
+        </EditModal>
       )}
 
       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -1197,7 +1258,7 @@ function AdminPage() {
         {/* Left: breadcrumb */}
         <div style={{ display:'flex', alignItems:'center', gap:14 }}>
           <a href="/">
-            <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:40, display:'block' }} />
+            <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:48, display:'block' }} />
           </a>
           <div style={{ width:1, height:16, background:'rgba(255,255,255,.06)' }} />
           <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.2em', color:'#3a3a50', textTransform:'uppercase' }}>Admin Edit/Create</span>
