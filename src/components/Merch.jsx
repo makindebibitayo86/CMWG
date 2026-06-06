@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
-const merch = [
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
+
+const FALLBACK_MERCH = [
   {
     id: 1,
     name: 'CMWG Explorer Tee',
@@ -119,7 +121,7 @@ function MerchModal({ item, onClose }) {
           {/* LEFT — gallery */}
           <div className="m-gallery">
             <div className="m-main-img">
-              <img src={item.imgs[activeImg]} alt={item.name} />
+              <img src={item.imgs?.[activeImg] ?? item.imgs?.[0] ?? ''} alt={item.name} />
               {item.tag && <span className="m-tag">{item.tag}</span>}
             </div>
             <div className="m-thumbs">
@@ -242,8 +244,30 @@ export default function Merch() {
   const scrollRef = useRef(null)
   const [active, setActive] = useState('All')
   const [openItem, setOpenItem] = useState(null)
+  const [merchData, setMerchData] = useState(FALLBACK_MERCH)
 
-  const filtered = active === 'All' ? merch : merch.filter(m => m.category === active)
+  useEffect(() => {
+    fetch(`${SCRIPT_URL}?type=merch`)
+      .then(r => r.json())
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const merged = data.map(item => {
+            const local = FALLBACK_MERCH.find(m => String(m.id) === String(item.id) || m.name === item.name)
+            const imgs = (item.imgs && (Array.isArray(item.imgs) ? item.imgs.length > 0 : item.imgs.toString().length > 0))
+              ? (Array.isArray(item.imgs) ? item.imgs : item.imgs.toString().split('|').filter(Boolean))
+              : (local ? local.imgs : [])
+            const fields = item.fields
+              ? (Array.isArray(item.fields) ? item.fields : item.fields.toString().split('|').filter(Boolean))
+              : (local ? local.fields : ['note'])
+            return { ...local, ...item, imgs, fields }
+          })
+          setMerchData(merged)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const filtered = active === 'All' ? merchData : merchData.filter(m => m.category === active)
 
   const drag = useRef({ isDown: false, startX: 0, scrollLeft: 0, velocity: 0 })
 
@@ -305,7 +329,7 @@ export default function Merch() {
             onClick={() => setOpenItem(item)}
           >
             <div className="merch__img-wrap">
-              <img src={item.imgs[0]} alt={item.name} />
+              <img src={item.imgs?.[0] || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80'} alt={item.name} />
               {item.tag && <span className="merch__tag">{item.tag}</span>}
               <div className="merch__img-overlay" />
             </div>

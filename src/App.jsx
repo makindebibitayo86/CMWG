@@ -1,11 +1,13 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import Destinations from './components/Destinations'
 import Merch from './components/Merch'
 import About from './components/About'
 import Footer from './components/Footer'
+import AdminPage from './pages/AdminPage'
 
-function App() {
+function Home() {
   return (
     <>
       <Navbar />
@@ -15,6 +17,17 @@ function App() {
       <About />
       <Footer />
     </>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/admin" element={<AdminPage />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
