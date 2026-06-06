@@ -3,92 +3,6 @@ import { motion } from 'framer-motion'
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
 
-const FALLBACK_MERCH = [
-  {
-    id: 1,
-    name: 'CMWG Explorer Tee',
-    category: 'Clothing',
-    price: '$35',
-    tag: 'Bestseller',
-    desc: 'Lightweight cotton tee with embroidered CMWG crest. Built for the road.',
-    imgs: [
-      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=800&q=80',
-    ],
-    fields: ['sleeve', 'size', 'height', 'age', 'note'],
-  },
-  {
-    id: 2,
-    name: 'Safari Hoodie',
-    category: 'Clothing',
-    price: '$75',
-    tag: 'New',
-    desc: 'Midweight fleece hoodie in earthy gold. Perfect for cool savannah nights.',
-    imgs: [
-      'https://images.unsplash.com/photo-1556821840-3a63f15732ce?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1509942774463-acf339cf87d5?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=800&q=80',
-    ],
-    fields: ['size', 'height', 'age', 'note'],
-  },
-  {
-    id: 3,
-    name: 'CMWG Snapback Cap',
-    category: 'Clothing',
-    price: '$28',
-    tag: null,
-    desc: 'Structured snapback with gold CMWG logo embroidery on a black crown.',
-    imgs: [
-      'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1534215754734-18e55d13e346?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=800&q=80',
-    ],
-    fields: ['age', 'note'],
-  },
-  {
-    id: 4,
-    name: 'Adventure Duffel',
-    category: 'Travel Gear',
-    price: '$110',
-    tag: 'New',
-    desc: '40L waxed canvas duffel with leather handles and CMWG patch. Weekend-ready.',
-    imgs: [
-      'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1473188588951-666fce8e7c68?auto=format&fit=crop&w=800&q=80',
-    ],
-    fields: ['note'],
-  },
-  {
-    id: 5,
-    name: 'Expedition Bottle',
-    category: 'Travel Gear',
-    price: '$42',
-    tag: null,
-    desc: 'Insulated 750ml steel bottle. Keeps cold 24hrs, hot 12hrs. CMWG laser-etched.',
-    imgs: [
-      'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1570831739435-6601aa3fa4fb?auto=format&fit=crop&w=800&q=80',
-    ],
-    fields: ['note'],
-  },
-  {
-    id: 6,
-    name: 'Passport Wallet',
-    category: 'Travel Gear',
-    price: '$55',
-    tag: 'Bestseller',
-    desc: 'Full-grain leather passport holder with card slots and CMWG gold foil stamp.',
-    imgs: [
-      'https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1606503153255-59d5e417b073?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=800&q=80',
-    ],
-    fields: ['note'],
-  },
-]
 
 const categories = ['All', 'Clothing', 'Travel Gear']
 
@@ -244,7 +158,7 @@ export default function Merch() {
   const scrollRef = useRef(null)
   const [active, setActive] = useState('All')
   const [openItem, setOpenItem] = useState(null)
-  const [merchData, setMerchData] = useState(FALLBACK_MERCH)
+  const [merchData, setMerchData] = useState(null)
 
   useEffect(() => {
     fetch(`${SCRIPT_URL}?type=merch`)
@@ -252,14 +166,13 @@ export default function Merch() {
       .then(({ data }) => {
         if (data && data.length > 0) {
           const merged = data.map(item => {
-            const local = FALLBACK_MERCH.find(m => String(m.id) === String(item.id) || m.name === item.name)
             const imgs = (item.imgs && (Array.isArray(item.imgs) ? item.imgs.length > 0 : item.imgs.toString().length > 0))
               ? (Array.isArray(item.imgs) ? item.imgs : item.imgs.toString().split('|').filter(Boolean))
-              : (local ? local.imgs : [])
+              : []
             const fields = item.fields
               ? (Array.isArray(item.fields) ? item.fields : item.fields.toString().split('|').filter(Boolean))
-              : (local ? local.fields : ['note'])
-            return { ...local, ...item, imgs, fields }
+              : ['note']
+            return { ...item, imgs, fields }
           })
           setMerchData(merged)
         }
@@ -267,7 +180,8 @@ export default function Merch() {
       .catch(() => {})
   }, [])
 
-  const filtered = active === 'All' ? merchData : merchData.filter(m => m.category === active)
+  const isLoading = merchData === null
+  const filtered = isLoading ? [] : (active === 'All' ? merchData : merchData.filter(m => m.category === active))
 
   const drag = useRef({ isDown: false, startX: 0, scrollLeft: 0, velocity: 0 })
 
@@ -322,14 +236,30 @@ export default function Merch() {
         onMouseLeave={onUp}
         onMouseMove={onMove}
       >
-        {filtered.map((item) => (
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="merch__card merch__card--skeleton">
+                <div className="merch__img-wrap merch__skeleton-img" />
+                <div className="merch__info">
+                  <div className="merch__skeleton-line" style={{ width: '40%', height: '0.6rem', marginBottom: '0.6rem' }} />
+                  <div className="merch__skeleton-line" style={{ width: '75%', height: '1.1rem', marginBottom: '0.5rem' }} />
+                  <div className="merch__skeleton-line" style={{ width: '90%', height: '0.7rem', marginBottom: '0.3rem' }} />
+                  <div className="merch__skeleton-line" style={{ width: '65%', height: '0.7rem', marginBottom: '1rem' }} />
+                  <div className="merch__footer">
+                    <div className="merch__skeleton-line" style={{ width: '30%', height: '1.2rem' }} />
+                    <div className="merch__skeleton-line" style={{ width: '22%', height: '2rem' }} />
+                  </div>
+                </div>
+              </div>
+            ))
+          : filtered.map((item) => (
           <div
             key={item.id}
             className="merch__card"
             onClick={() => setOpenItem(item)}
           >
             <div className="merch__img-wrap">
-              <img src={item.imgs?.[0] || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=80'} alt={item.name} />
+              <img src={item.imgs?.[0]} alt={item.name} />
               {item.tag && <span className="merch__tag">{item.tag}</span>}
               <div className="merch__img-overlay" />
             </div>
@@ -883,7 +813,45 @@ export default function Merch() {
 
         .m-success-close:hover { background: #c9a84c; color: #080808; }
 
-        /* responsive */
+        /* SKELETONS */
+        .merch__card--skeleton { pointer-events: none; }
+
+        .merch__skeleton-img {
+          height: 240px;
+          background: rgba(255,255,255,0.06);
+        }
+
+        .merch__skeleton-line {
+          background: rgba(255,255,255,0.06);
+          border-radius: 2px;
+        }
+
+        .merch__skeleton-img,
+        .merch__skeleton-line {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .merch__skeleton-img::after,
+        .merch__skeleton-line::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255,255,255,0.07) 50%,
+            transparent 100%
+          );
+          animation: merch-shimmer 1.6s infinite;
+        }
+
+        @keyframes merch-shimmer {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+
+        
         @media (max-width: 700px) {
           .m-body { grid-template-columns: 1fr; }
           .m-gallery { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); max-height: 280px; }
