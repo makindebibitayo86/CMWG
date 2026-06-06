@@ -183,6 +183,18 @@ export default function Merch() {
   const isLoading = merchData === null
   const filtered = isLoading ? [] : (active === 'All' ? merchData : merchData.filter(m => m.category === active))
 
+  const [activeDot, setActiveDot] = useState(0)
+  const dotCount = isLoading ? 4 : filtered.length
+
+  const onScroll = () => {
+    const el = scrollRef.current
+    if (!el) return
+    const max = el.scrollWidth - el.clientWidth
+    if (max <= 0) { setActiveDot(0); return }
+    const idx = Math.round((el.scrollLeft / max) * (dotCount - 1))
+    setActiveDot(Math.min(idx, dotCount - 1))
+  }
+
   const drag = useRef({ isDown: false, startX: 0, scrollLeft: 0, velocity: 0 })
 
   const onDown = (e) => {
@@ -235,6 +247,7 @@ export default function Merch() {
         onMouseUp={onUp}
         onMouseLeave={onUp}
         onMouseMove={onMove}
+        onScroll={onScroll}
       >
         {isLoading
           ? Array.from({ length: 4 }).map((_, i) => (
@@ -275,6 +288,18 @@ export default function Merch() {
           </div>
         ))}
       </div>
+
+      {/* SCROLL DOTS */}
+      {dotCount > 1 && (
+        <div className="merch__dots">
+          {Array.from({ length: dotCount }).map((_, i) => (
+            <div
+              key={i}
+              className={`merch__dot${activeDot === i ? ' active' : ''}`}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="merch__bottom">
         <p>Want a custom order or bulk gear for your group trip?</p>
@@ -503,18 +528,13 @@ export default function Merch() {
 
         .m-modal {
           position: relative;
-          width: 90vw;
-          max-width: 1100px;
-          height: 85vh;
-          min-width: 420px;
-          min-height: 400px;
-          max-height: 95vh;
+          width: min(90vw, 1100px);
+          max-height: 92vh;
           background: #0f0f0f;
           border: 1px solid rgba(201,168,76,0.2);
           animation: mUp 0.32s ease;
           display: flex;
           flex-direction: column;
-          resize: both;
           overflow: hidden;
           box-sizing: border-box;
         }
@@ -553,8 +573,6 @@ export default function Merch() {
         .m-body {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          flex: 1;
-          height: 100%;
           min-height: 0;
           overflow: hidden;
         }
@@ -568,7 +586,7 @@ export default function Merch() {
           background: #0a0a0a;
           box-sizing: border-box;
           overflow: hidden;
-          height: 100%;
+          min-height: 0;
         }
 
         .m-main-img {
@@ -644,7 +662,8 @@ export default function Merch() {
           overflow-y: auto;
           display: flex;
           flex-direction: column;
-          height: 100%;
+          min-height: 0;
+          max-height: 92vh;
           box-sizing: border-box;
           scrollbar-width: thin;
           scrollbar-color: rgba(201,168,76,0.3) transparent;
@@ -850,15 +869,82 @@ export default function Merch() {
           animation: merch-shimmer 1.6s infinite;
         }
 
+        /* SCROLL DOTS */
+        .merch__dots {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 0.45rem;
+          margin-top: 1.8rem;
+        }
+
+        .merch__dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.15);
+          transition: all 0.3s ease;
+          flex-shrink: 0;
+        }
+
+        .merch__dot.active {
+          width: 22px;
+          border-radius: 3px;
+          background: #c9a84c;
+        }
+
         @keyframes merch-shimmer {
           0%   { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
         }
 
         
-        @media (max-width: 700px) {
-          .m-body { grid-template-columns: 1fr; }
-          .m-gallery { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); max-height: 280px; }
+        /* ── RESPONSIVE ── */
+
+        /* Tablet: tighten padding, shrink thumbs */
+        @media (max-width: 860px) {
+          .m-backdrop { padding: 0; align-items: flex-end; }
+          .m-modal {
+            width: 100vw;
+            max-height: 96vh;
+            border-left: none;
+            border-right: none;
+            border-bottom: none;
+            border-radius: 0;
+          }
+          .m-body { grid-template-columns: 1fr 1fr; }
+          .m-gallery { padding: 1rem; }
+          .m-right { padding: 1rem 1.2rem 1.2rem; }
+          .m-thumbs { height: 56px; }
+          .m-thumb { flex: 0 0 56px; height: 56px; }
+        }
+
+        /* Mobile: stack gallery above info */
+        @media (max-width: 580px) {
+          .m-body {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr;
+            overflow-y: auto;
+            max-height: calc(96vh - 0px);
+          }
+          .m-gallery {
+            border-right: none;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            padding: 1rem 1rem 0.75rem;
+            height: auto;
+          }
+          .m-main-img {
+            height: 220px;
+            flex: none;
+          }
+          .m-right {
+            overflow-y: visible;
+            max-height: none;
+            padding: 1.2rem 1rem 2rem;
+          }
+          .m-close { top: 0.6rem; right: 0.6rem; }
+          .m-name { font-size: 1.5rem; }
+          .m-price { font-size: 1.4rem; margin-bottom: 1rem; }
         }
       `}</style>
     </section>
