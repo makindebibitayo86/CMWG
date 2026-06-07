@@ -1,16 +1,106 @@
-# React + Vite
+# CMWG — Travel & Merch Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based travel booking and merchandise platform with Google Sheets as the backend database and Formspree for email notifications.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+- **Frontend** — React (JSX), deployed on Netlify via GitHub
+- **Backend** — Google Apps Script (Web App), connected to Google Sheets
+- **Email** — Formspree
+- **Media** — Cloudinary (images & videos)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Project Structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```
+├── Destinations.jsx      # Destinations page — browse, filter, book
+├── Merch.jsx             # Merch store — browse, order
+├── Code.gs               # Google Apps Script — handles all reads/writes
+```
+
+---
+
+## How It Works
+
+### Destinations & Bookings
+- Destinations are loaded from the `destinations` sheet via `doGet`
+- Users browse, filter by category, open a modal, and fill a booking enquiry form
+- On submit, the booking is written to the `bookings` sheet and an email is sent via Formspree
+
+### Merch
+- Products are loaded from the `merch` sheet via `doGet`
+- Users browse by category, open a product modal, and place an order
+- On submit, the order is written to the `orders` sheet and an email is sent via Formspree
+
+---
+
+## Google Sheets Structure
+
+### `destinations`
+| id | title | desc | tagline | price | img | video | category | highlights | bestTime | duration |
+
+### `bookings`
+| timestamp | destination | name | phone | email | date | travellers | budget | message |
+
+### `merch`
+| id | name | price | tag | desc | category | imgs | fields |
+
+### `orders`
+| timestamp | product | category | price | name | phone | email | size | sleeve | height | age | note |
+
+---
+
+## Apps Script Endpoints
+
+**Base URL:**
+```
+https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec
+```
+
+| Method | Param / Type | Action |
+|--------|-------------|--------|
+| GET | `?type=destinations` | Fetch all destinations |
+| GET | `?type=bookings` | Fetch all bookings |
+| GET | `?type=merch` | Fetch all merch products |
+| GET | `?type=orders` | Fetch all orders |
+| POST | `type: 'booking'` | Save booking enquiry |
+| POST | `type: 'merch_order'` | Save merch order |
+| POST | `type: 'save_destinations'` | Overwrite destinations data |
+| POST | `type: 'save_merch'` | Overwrite merch data |
+
+---
+
+## Notifications
+
+All form submissions (bookings + merch orders) send an email via Formspree to the same inbox.
+
+**Formspree endpoint:** `https://formspree.io/f/mbdegokk`
+
+- Booking email subject: `New Booking Enquiry — [Destination]`
+- Merch email subject: `New Merch Order — [Product]`
+
+---
+
+## Deploying Changes
+
+### Frontend
+1. Push changes to GitHub
+2. Netlify auto-deploys on push to main
+
+### Apps Script (Code.gs)
+1. Open [script.google.com](https://script.google.com)
+2. Make changes to `Code.gs`
+3. **Deploy → Manage deployments → Edit → New version → Deploy**
+4. Do NOT create a new deployment — always update the existing one to keep the URL the same
+
+---
+
+## Notes
+
+- If a sheet tab doesn't exist, the script creates it automatically on first submission
+- The `bookings` and `orders` sheets are append-only — never delete the header row
+- Merch `imgs` field uses `|` as a separator for multiple image URLs
+- Destination `highlights` field uses `|` as a separator for multiple highlight strings
