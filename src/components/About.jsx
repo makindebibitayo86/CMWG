@@ -42,6 +42,17 @@ export default function About() {
 
   // ── Video crossfade logic ──────────────────────────────────────────────────
   const [activeIndex, setActiveIndex] = useState(0);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const update = () => {
+      const designWidth = 1280;
+      setScale(window.innerWidth < designWidth ? window.innerWidth / designWidth : 1);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
   const videoRefs = [useRef(null), useRef(null)];
   const crossfadingRef = useRef(false);
 
@@ -105,6 +116,7 @@ export default function About() {
   };
 
   return (
+    <div style={{ overflow: "hidden" }}>
     <section
       id="about"
       ref={sectionRef}
@@ -113,6 +125,10 @@ export default function About() {
         background: "#080808",
         overflow: "hidden",
         padding: "140px 0 160px",
+        transform: `scale(${scale})`,
+        transformOrigin: "top left",
+        width: scale < 1 ? `${100 / scale}%` : "100%",
+        marginBottom: scale < 1 ? `calc((${scale} - 1) * 100%)` : 0,
       }}
     >
       {/* ── Video A ── */}
@@ -459,5 +475,6 @@ export default function About() {
         </motion.div>
       </div>
     </section>
+    </div>
   );
 }

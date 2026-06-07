@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 const fadeUp = (delay = 0) => ({
@@ -7,8 +8,25 @@ const fadeUp = (delay = 0) => ({
 })
 
 function Hero() {
+  const [scale, setScale] = useState(1)
+
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth
+      setScale(w >= 768 && w < 1280 ? w / 1280 : 1)
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
   return (
-    <section className="hero">
+    <div style={{ overflow: 'hidden' }}>
+    <section className="hero" style={{
+      transform: `scale(${scale})`,
+      transformOrigin: 'top left',
+      width: scale < 1 ? `${100 / scale}%` : '100%',
+      marginBottom: scale < 1 ? `calc((${scale} - 1) * 100svh)` : 0,
+    }}>
 
       {/* VIDEO BACKGROUND */}
       <div className="hero__media">
@@ -201,7 +219,23 @@ function Hero() {
         }
 
         /* MOBILE */
-        @media (max-width: 900px) {
+        @media (max-width: 767px) {
+          .hero {
+            padding-top: 76px;
+            align-items: flex-start;
+          }
+
+          .hero__grid {
+            flex-direction: column;
+            padding-top: 1.5rem;
+          }
+
+          .hero__right {
+            width: 100%;
+          }
+        }
+
+        @media (min-width: 768px) and (max-width: 900px) {
           .hero__grid {
             flex-direction: column;
           }
@@ -213,6 +247,7 @@ function Hero() {
       `}</style>
 
     </section>
+    </div>
   )
 }
 

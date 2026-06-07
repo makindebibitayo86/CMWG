@@ -360,6 +360,21 @@ export default function Destinations() {
   const [places, setPlaces] = useState(FALLBACK_PLACES)
   const [loadingPlaces, setLoadingPlaces] = useState(true)
   const [fetchError, setFetchError] = useState(null)
+  const [isMobile, setIsMobile] = useState(false)
+  const [showSwipeHint, setShowSwipeHint] = useState(true)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  useEffect(() => {
+    if (!isMobile) return
+    const t = setTimeout(() => setShowSwipeHint(false), 3000)
+    return () => clearTimeout(t)
+  }, [isMobile])
 
   useEffect(() => {
     fetch(`${SCRIPT_URL}?action=getDestinations`)
@@ -391,6 +406,7 @@ export default function Destinations() {
   const dotCount = loadingPlaces ? 4 : filtered.length
 
   const onScroll = () => {
+    if (showSwipeHint) setShowSwipeHint(false)
     const el = scrollRef.current
     if (!el) return
     const max = el.scrollWidth - el.clientWidth
@@ -517,6 +533,15 @@ export default function Destinations() {
         ))
       }
       </div>
+
+      {/* SWIPE HINT — mobile only */}
+      {isMobile && (
+        <div className={`dest__swipe-hint${showSwipeHint ? ' visible' : ''}`}>
+          <span className="dest__swipe-arrow">←</span>
+          <span>Swipe to explore</span>
+          <span className="dest__swipe-arrow">→</span>
+        </div>
+      )}
 
       {/* SCROLL DOTS */}
       {dotCount > 1 && (
@@ -1057,7 +1082,7 @@ export default function Destinations() {
           .media { height: 220px; }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 767px) {
           .destinations {
             padding: 64px 5vw 48px;
           }
@@ -1067,8 +1092,8 @@ export default function Destinations() {
           }
 
           .card {
-            min-width: 78vw;
-            max-width: 78vw;
+            min-width: 85vw;
+            max-width: 85vw;
           }
 
           .media { height: 200px; }
@@ -1089,7 +1114,6 @@ export default function Destinations() {
             border-radius: 0;
           }
 
-          /* Stack columns vertically */
           .modal-body {
             grid-template-columns: 1fr;
             grid-template-rows: auto 1fr;
@@ -1105,9 +1129,7 @@ export default function Destinations() {
           }
 
           .modal-title { font-size: 2rem; }
-
           .modal-tagline { margin-bottom: 1.2rem; }
-
           .modal-meta { gap: 1.2rem; margin-bottom: 1.2rem; }
 
           .modal-highlights ul {
@@ -1120,7 +1142,6 @@ export default function Destinations() {
             overflow-y: visible;
           }
 
-          /* Single-column form fields on mobile */
           .field-row {
             grid-template-columns: 1fr;
           }
@@ -1129,6 +1150,43 @@ export default function Destinations() {
             top: 0.75rem;
             right: 0.75rem;
           }
+
+          /* Swipe hint */
+          .dest__swipe-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            margin-top: 1.2rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.68rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: rgba(201,168,76,0.5);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+          }
+
+          .dest__swipe-hint.visible { opacity: 1; }
+
+          .dest__swipe-arrow {
+            display: inline-block;
+            animation: dest-nudge 0.9s ease-in-out infinite alternate;
+          }
+
+          .dest__swipe-arrow:last-child {
+            animation-direction: alternate-reverse;
+          }
+
+          @keyframes dest-nudge {
+            from { transform: translateX(-4px); }
+            to   { transform: translateX(4px); }
+          }
+        }
+
+        @media (min-width: 768px) {
+          .dest__swipe-hint { display: none; }
         }
 
         /* SCROLL DOTS */

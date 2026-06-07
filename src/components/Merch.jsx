@@ -209,6 +209,22 @@ export default function Merch() {
   const [active, setActive] = useState('All')
   const [openItem, setOpenItem] = useState(null)
   const [merchData, setMerchData] = useState(null)
+  const [isMobile, setIsMobile] = useState(false)
+  const [showSwipeHint, setShowSwipeHint] = useState(true)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  // Auto-dismiss hint after 3s
+  useEffect(() => {
+    if (!isMobile) return
+    const t = setTimeout(() => setShowSwipeHint(false), 3000)
+    return () => clearTimeout(t)
+  }, [isMobile])
 
   useEffect(() => {
     fetch(`${SCRIPT_URL}?type=merch`)
@@ -237,6 +253,7 @@ export default function Merch() {
   const dotCount = isLoading ? 4 : filtered.length
 
   const onScroll = () => {
+    if (showSwipeHint) setShowSwipeHint(false)
     const el = scrollRef.current
     if (!el) return
     const max = el.scrollWidth - el.clientWidth
@@ -338,6 +355,15 @@ export default function Merch() {
           </div>
         ))}
       </div>
+
+      {/* SWIPE HINT — mobile only */}
+      {isMobile && (
+        <div className={`merch__swipe-hint${showSwipeHint ? ' visible' : ''}`}>
+          <span className="merch__swipe-arrow">←</span>
+          <span>Swipe to explore</span>
+          <span className="merch__swipe-arrow">→</span>
+        </div>
+      )}
 
       {/* SCROLL DOTS */}
       {dotCount > 1 && (
@@ -996,6 +1022,52 @@ export default function Merch() {
           .m-name { font-size: 1.5rem; }
           .m-price { font-size: 1.4rem; margin-bottom: 1rem; }
         }
+        /* ── MOBILE CARD + SWIPE HINT ── */
+        @media (max-width: 767px) {
+          .merch__card {
+            min-width: 85vw;
+            max-width: 85vw;
+          }
+
+          .merch__swipe-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            margin-top: 1.2rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.68rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: rgba(201,168,76,0.5);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+          }
+
+          .merch__swipe-hint.visible {
+            opacity: 1;
+          }
+
+          .merch__swipe-arrow {
+            display: inline-block;
+            animation: nudge 0.9s ease-in-out infinite alternate;
+          }
+
+          .merch__swipe-arrow:last-child {
+            animation-direction: alternate-reverse;
+          }
+
+          @keyframes nudge {
+            from { transform: translateX(-4px); }
+            to   { transform: translateX(4px); }
+          }
+        }
+
+        @media (min-width: 768px) {
+          .merch__swipe-hint { display: none; }
+        }
+
       `}</style>
     </section>
   )

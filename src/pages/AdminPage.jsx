@@ -2,8 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 
-const HASHED_USER = '576e2fcd4689573c23734124d347cfd24a2c96fdb91fa632bd6e802892e2f2f9'
-const HASHED_PASS = 'ad1277823788f0ccc4385af97ce54a9875b8806f0ca60684f2a4e257d817a4bb'
+const ADMINS = [
+  { name: 'admin',          user: '576e2fcd4689573c23734124d347cfd24a2c96fdb91fa632bd6e802892e2f2f9', pass: 'ad1277823788f0ccc4385af97ce54a9875b8806f0ca60684f2a4e257d817a4bb' },
+  { name: 'bibitayouthman', user: '310f5adb9d9ba6b5d9fb83ef4fc1e08ba97eb79e210942ac259c7963ade68e9a', pass: '79e1b737b7800d8142fa495e26a72e0f081b554fa57910a67fa1e7d0997badcd' },
+]
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
@@ -16,13 +18,15 @@ function LoginScreen({ onLogin }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [focused, setFocused] = useState(null)
+  const [showPass, setShowPass] = useState(false)
 
   const handleSubmit = async () => {
     setLoading(true)
     setError('')
     const [hu, hp] = await Promise.all([sha256(user), sha256(pass)])
-    if (hu === HASHED_USER && hp === HASHED_PASS) {
-      onLogin()
+    const match = ADMINS.find(a => a.user === hu && a.pass === hp)
+    if (match) {
+      onLogin(match.name)
     } else {
       setError('Invalid credentials')
     }
@@ -94,19 +98,36 @@ function LoginScreen({ onLogin }) {
           </div>
           <div style={{ marginBottom:28 }}>
             <label style={{ display:'block', fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.2em', color:'#3a3a4a', textTransform:'uppercase', marginBottom:8 }}>Password</label>
-            <input
-              type="password" value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={onKey}
-              autoComplete="current-password"
-              onFocus={()=>setFocused('pass')} onBlur={()=>setFocused(null)}
-              style={{
-                width:'100%', background:focused==='pass'?'#0f0f1a':'#0a0a10',
-                border:`1px solid ${focused==='pass'?'#c9a84c':'#1e1e30'}`,
-                borderRadius:8, color:'#e8e0d0',
-                fontFamily:"'DM Mono',monospace", fontSize:13,
-                padding:'12px 14px', boxSizing:'border-box', outline:'none',
-                transition:'all .2s', letterSpacing:'0.04em',
-              }}
-            />
+            <div style={{ position:'relative' }}>
+              <input
+                type={showPass ? 'text' : 'password'} value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={onKey}
+                autoComplete="current-password"
+                onFocus={()=>setFocused('pass')} onBlur={()=>setFocused(null)}
+                style={{
+                  width:'100%', background:focused==='pass'?'#0f0f1a':'#0a0a10',
+                  border:`1px solid ${focused==='pass'?'#c9a84c':'#1e1e30'}`,
+                  borderRadius:8, color:'#e8e0d0',
+                  fontFamily:"'DM Mono',monospace", fontSize:13,
+                  padding:'12px 42px 12px 14px', boxSizing:'border-box', outline:'none',
+                  transition:'all .2s', letterSpacing:'0.04em',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass(v => !v)}
+                style={{
+                  position:'absolute', right:12, top:'50%', transform:'translateY(-50%)',
+                  background:'none', border:'none', cursor:'pointer', padding:4,
+                  color: showPass ? '#c9a84c' : '#3a3a5a',
+                  transition:'color .2s', lineHeight:1,
+                }}
+              >
+                {showPass
+                  ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                }
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -539,7 +560,7 @@ const CONFIG_SECTIONS = [
   { key:'footer', label:'Footer', icon:'⌘', desc:'Footer links' },
 ]
 
-function SideNav({ active, onSelect, data }) {
+function SideNav({ active, onSelect, data, open, onToggle, isMobile, activeUser, onLogout }) {
   const [configOpen, setConfigOpen] = useState(false)
 
   const NavBtn = ({ s }) => {
@@ -547,109 +568,182 @@ function SideNav({ active, onSelect, data }) {
     return (
       <button
         key={s.key}
-        onClick={() => onSelect(s.key)}
+        onClick={() => { onSelect(s.key); if (isMobile) onToggle() }}
+        title={!open ? s.label : undefined}
         style={{
-          display:'flex', alignItems:'center', gap:12,
-          width:'100%', padding:'9px 10px', marginBottom:2,
+          display:'flex', alignItems:'center', gap: open ? 12 : 0,
+          width:'100%', padding: open ? '9px 10px' : '11px 0',
+          justifyContent: open ? 'flex-start' : 'center',
+          marginBottom:2,
           background: isActive ? 'linear-gradient(90deg,rgba(201,168,76,.1),rgba(201,168,76,.03))' : 'transparent',
           border:'none',
-          borderLeft:`2px solid ${isActive?'#c9a84c':'transparent'}`,
-          borderRadius:'0 7px 7px 0',
+          borderLeft: open ? `2px solid ${isActive?'#c9a84c':'transparent'}` : 'none',
+          borderRadius: open ? '0 7px 7px 0' : 8,
           color: isActive ? '#c9a84c' : '#444',
           cursor:'pointer',
           textAlign:'left',
           transition:'all .15s',
+          position:'relative',
         }}
-        onMouseEnter={e=>{ if(!isActive){ e.currentTarget.style.background='rgba(255,255,255,.02)'; e.currentTarget.style.color='#777' } }}
+        onMouseEnter={e=>{ if(!isActive){ e.currentTarget.style.background='rgba(255,255,255,.04)'; e.currentTarget.style.color='#777' } }}
         onMouseLeave={e=>{ if(!isActive){ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#444' } }}
       >
         <span style={{ fontSize:15, width:20, textAlign:'center', flexShrink:0 }}>{s.icon}</span>
-        <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:isActive?600:400, letterSpacing:'0.01em', lineHeight:1.2 }}>{s.label}</div>
-          <div style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.1em', color:isActive?'rgba(201,168,76,.5)':'#2a2a3a', marginTop:1 }}>{s.desc}</div>
-        </div>
+        {open && (
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:isActive?600:400, letterSpacing:'0.01em', lineHeight:1.2 }}>{s.label}</div>
+            <div style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.1em', color:isActive?'rgba(201,168,76,.5)':'#2a2a3a', marginTop:1 }}>{s.desc}</div>
+          </div>
+        )}
       </button>
     )
   }
 
+  const sidebarWidth = open ? 220 : 52
+
   return (
-    <div style={{
-      width:220, flexShrink:0,
-      background:'#060610',
-      borderRight:'1px solid rgba(255,255,255,.04)',
-      display:'flex', flexDirection:'column',
-      paddingTop:0,
-    }}>
-      {/* Logo area */}
+    <>
+      {/* Mobile backdrop */}
+      {isMobile && open && (
+        <div onClick={onToggle} style={{
+          position:'fixed', inset:0, zIndex:149,
+          background:'rgba(0,0,0,.6)',
+          backdropFilter:'blur(4px)',
+          animation:'fadeIn .2s ease',
+        }} />
+      )}
+
       <div style={{
-        padding:'20px 18px 16px',
-        borderBottom:'1px solid rgba(255,255,255,.04)',
+        width: isMobile ? (open ? 260 : 0) : sidebarWidth,
+        flexShrink:0,
+        background:'#060610',
+        borderRight:'1px solid rgba(255,255,255,.04)',
+        display:'flex', flexDirection:'column',
+        transition: isMobile ? 'none' : 'width .22s cubic-bezier(.4,0,.2,1)',
+        overflow: isMobile ? 'visible' : 'hidden',
+        position: isMobile ? 'relative' : 'relative',
+        // On mobile: fixed drawer that slides in from left
+        ...(isMobile ? {
+          position:'fixed', top:0, left:0, bottom:0, zIndex:150,
+          width: open ? 260 : 0,
+          overflow:'hidden',
+          transition:'width .25s cubic-bezier(.4,0,.2,1)',
+          boxShadow: open ? '4px 0 40px rgba(0,0,0,.6)' : 'none',
+        } : {}),
       }}>
-        <a href="/"><img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:34 }} /></a>
-        <p style={{ color:'#2a2a40', fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.22em', textTransform:'uppercase', margin:'10px 0 0' }}>Content Admin</p>
-      </div>
-
-      {/* Nav items */}
-      <div style={{ flex:1, padding:'12px 10px', overflowY:'auto' }}>
-
-        {/* Operations group */}
-        <p style={{ color:'#c9a84c', fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.25em', textTransform:'uppercase', padding:'4px 8px 10px', opacity:0.6 }}>Operations</p>
-        {OPS_SECTIONS.map(s => <NavBtn key={s.key} s={s} />)}
-
-        {/* Site Config group — collapsible */}
-        <div style={{ marginTop:16 }}>
+        <div style={{
+          width: isMobile ? 260 : (open ? 220 : 52),
+          display:'flex', flexDirection:'column', height:'100%',
+          overflow:'hidden',
+        }}>
+          {/* Logo area — click to collapse/expand */}
           <button
-            onClick={() => setConfigOpen(o => !o)}
+            onClick={onToggle}
+            title={open ? 'Collapse sidebar' : 'Expand sidebar'}
             style={{
-              display:'flex', alignItems:'center', justifyContent:'space-between',
-              width:'100%', background:'transparent', border:'none', cursor:'pointer',
-              padding:'4px 8px 10px',
+              padding: open ? '20px 18px 16px' : '16px 0',
+              borderBottom:'1px solid rgba(255,255,255,.04)',
+              display:'flex', alignItems:'center',
+              justifyContent: open ? 'flex-start' : 'center',
+              flexShrink:0, width:'100%',
+              background:'transparent', border:'none', borderBottom:'1px solid rgba(255,255,255,.04)',
+              cursor:'pointer', textAlign:'left',
+              transition:'background .15s',
             }}
+            onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,.02)'}
+            onMouseLeave={e => e.currentTarget.style.background='transparent'}
           >
-            <span style={{ color:'#c9a84c', fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.25em', textTransform:'uppercase', opacity:0.6 }}>Site Config</span>
-            <span style={{
-              color:'#c9a84c', fontSize:9, opacity:0.6,
-              transition:'transform .2s',
-              display:'inline-block',
-              transform: configOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            }}>▾</span>
+            {open
+              ? <>
+                  <div style={{ flex:1 }}>
+                    <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:34, display:'block' }} />
+                    <p style={{ color:'#2a2a40', fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.22em', textTransform:'uppercase', margin:'10px 0 0' }}>Content Admin</p>
+                  </div>
+                  <span style={{ color:'#2a2a40', fontSize:12, fontFamily:"'DM Mono',monospace", marginLeft:8 }}>‹</span>
+                </>
+              : <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:22, width:22, objectFit:'contain', opacity:0.5 }} />
+            }
           </button>
 
-          {configOpen && (
-            <div style={{ animation:'fadeIn .15s ease' }}>
-              {CONFIG_SECTIONS.map(s => <NavBtn key={s.key} s={s} />)}
+          {/* Nav items */}
+          <div style={{ flex:1, padding: open ? '12px 10px' : '12px 6px', overflowY:'auto' }}>
+            {open && <p style={{ color:'#c9a84c', fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.25em', textTransform:'uppercase', padding:'4px 8px 10px', opacity:0.6 }}>Operations</p>}
+            {!open && <div style={{ height:8 }} />}
+            {OPS_SECTIONS.map(s => <NavBtn key={s.key} s={s} />)}
+
+            {open ? (
+              <div style={{ marginTop:16 }}>
+                <button
+                  onClick={() => setConfigOpen(o => !o)}
+                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', background:'transparent', border:'none', cursor:'pointer', padding:'4px 8px 10px' }}
+                >
+                  <span style={{ color:'#c9a84c', fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.25em', textTransform:'uppercase', opacity:0.6 }}>Site Config</span>
+                  <span style={{ color:'#c9a84c', fontSize:9, opacity:0.6, transition:'transform .2s', display:'inline-block', transform: configOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
+                </button>
+                {configOpen
+                  ? <div style={{ animation:'fadeIn .15s ease' }}>{CONFIG_SECTIONS.map(s => <NavBtn key={s.key} s={s} />)}</div>
+                  : <p style={{ color:'#1e1e2e', fontFamily:"'DM Mono',monospace", fontSize:9, padding:'0 10px 4px', letterSpacing:'0.06em' }}>Hero · About · Navbar · Footer</p>
+                }
+              </div>
+            ) : (
+              <div style={{ marginTop:12, borderTop:'1px solid rgba(255,255,255,.04)', paddingTop:12 }}>
+                {CONFIG_SECTIONS.map(s => <NavBtn key={s.key} s={s} />)}
+              </div>
+            )}
+          </div>
+
+          {/* Stats — only when expanded */}
+          {open && (
+            <div style={{ padding:'14px 18px 20px', borderTop:'1px solid rgba(255,255,255,.04)', flexShrink:0 }}>
+              <p style={{ color:'#252535', fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.25em', textTransform:'uppercase', marginBottom:12 }}>Quick stats</p>
+              {[
+                ['Destinations', data.destinations.length, '◎'],
+                ['Merch items', data.merch.length, '✦'],
+                ['Nav links', data.navbar.links.length, '≡'],
+                ['Bookings', data.bookingCount ?? '—', '◉'],
+              ].map(([label, count, icon]) => (
+                <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+                  <span style={{ color:'#2e2e42', fontFamily:"'DM Mono',monospace", fontSize:10, display:'flex', alignItems:'center', gap:6 }}>
+                    <span style={{ fontSize:10, color:'#3a3a50' }}>{icon}</span>{label}
+                  </span>
+                  <span style={{ color:'#c9a84c', fontFamily:"'DM Mono',monospace", fontSize:11, fontWeight:600, background:'rgba(201,168,76,.08)', padding:'1px 8px', borderRadius:4 }}>{count}</span>
+                </div>
+              ))}
             </div>
           )}
 
-          {!configOpen && (
-            <p style={{ color:'#1e1e2e', fontFamily:"'DM Mono',monospace", fontSize:9, padding:'0 10px 4px', letterSpacing:'0.06em' }}>
-              Hero · About · Navbar · Footer
-            </p>
-          )}
+          {/* Logout */}
+          <div style={{ padding: open ? '10px 12px' : '10px 6px', borderTop:'1px solid rgba(255,255,255,.04)', flexShrink:0 }}>
+            <button
+              onClick={onLogout}
+              title="Log out"
+              style={{
+                display:'flex', alignItems:'center', gap: open ? 10 : 0,
+                justifyContent: open ? 'flex-start' : 'center',
+                width:'100%', padding: open ? '8px 10px' : '8px 0',
+                background:'transparent', border:'1px solid rgba(200,60,60,.12)',
+                borderRadius:7, cursor:'pointer', color:'#5a2a2a',
+                transition:'all .15s',
+              }}
+              onMouseEnter={e=>{ e.currentTarget.style.background='rgba(200,60,60,.08)'; e.currentTarget.style.borderColor='rgba(200,60,60,.35)'; e.currentTarget.style.color='#e57373' }}
+              onMouseLeave={e=>{ e.currentTarget.style.background='transparent'; e.currentTarget.style.borderColor='rgba(200,60,60,.12)'; e.currentTarget.style.color='#5a2a2a' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              {open && (
+                <div style={{ textAlign:'left' }}>
+                  <div style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.12em', textTransform:'uppercase', lineHeight:1.2 }}>Log out</div>
+                  <div style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.08em', color:'#3a2a2a', marginTop:2, textTransform:'none' }}>{activeUser}</div>
+                </div>
+              )}
+            </button>
+          </div>
+
+
         </div>
       </div>
-
-      {/* Stats */}
-      <div style={{ padding:'14px 18px 20px', borderTop:'1px solid rgba(255,255,255,.04)' }}>
-        <p style={{ color:'#252535', fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.25em', textTransform:'uppercase', marginBottom:12 }}>Quick stats</p>
-        {[
-          ['Destinations', data.destinations.length, '◎'],
-          ['Merch items', data.merch.length, '✦'],
-          ['Nav links', data.navbar.links.length, '≡'],
-          ['Bookings', data.bookingCount ?? '—', '◉'],
-        ].map(([label, count, icon]) => (
-          <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-            <span style={{ color:'#2e2e42', fontFamily:"'DM Mono',monospace", fontSize:10, display:'flex', alignItems:'center', gap:6 }}>
-              <span style={{ fontSize:10, color:'#3a3a50' }}>{icon}</span>{label}
-            </span>
-            <span style={{
-              color:'#c9a84c', fontFamily:"'DM Mono',monospace", fontSize:11, fontWeight:600,
-              background:'rgba(201,168,76,.08)', padding:'1px 8px', borderRadius:4,
-            }}>{count}</span>
-          </div>
-        ))}
-      </div>
-    </div>
+    </>
   )
 }
 
@@ -1332,12 +1426,277 @@ function FooterEditor({ data, onChange }) {
 
 // ─── BOOKINGS EDITOR ─────────────────────────────────────────────────────────
 
+// ─── RECORD DETAIL MODAL ─────────────────────────────────────────────────────
+
+function RecordDetailModal({ record, type, onClose }) {
+  const [vw, setVw] = useState(window.innerWidth)
+  useEffect(() => {
+    const handle = () => setVw(window.innerWidth)
+    window.addEventListener('resize', handle)
+    return () => window.removeEventListener('resize', handle)
+  }, [])
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  const mob = vw < 600
+  const onBackdrop = (e) => { if (e.target === e.currentTarget) onClose() }
+
+  const fmtPhone = (v) => {
+    if (!v) return v
+    const s = String(v).trim().replace(/\s+/g, '')
+    if (/^\d{10}$/.test(s)) return '0' + s
+    return s
+  }
+
+  const fmt = (v) => {
+    if (!v) return null
+    if (typeof v === 'string' && v.match(/^\d{4}-\d{2}-\d{2}T/)) {
+      return new Date(v).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+    }
+    return v
+  }
+
+  const LabelValue = ({ label, value, gold, wide, span2 }) => {
+    const display = fmt(value)
+    if (!display) return null
+    return (
+      <div style={{
+        gridColumn: wide ? '1 / -1' : span2 && !mob ? 'span 2' : undefined,
+        background: 'rgba(255,255,255,.02)',
+        border: '1px solid rgba(255,255,255,.05)',
+        borderRadius: 8, padding: mob ? '10px 12px' : '12px 14px',
+      }}>
+        <p style={{
+          fontFamily: "'DM Mono',monospace", fontSize: 9,
+          letterSpacing: '0.22em', textTransform: 'uppercase',
+          color: '#3a3a50', margin: '0 0 5px',
+        }}>{label}</p>
+        <p style={{
+          fontFamily: gold ? "'DM Mono',monospace" : "'DM Sans',sans-serif",
+          fontSize: gold ? (mob ? 13 : 15) : (mob ? 12 : 13),
+          fontWeight: gold ? 600 : 400,
+          color: gold ? '#c9a84c' : '#e8e0d0',
+          margin: 0, lineHeight: 1.5, wordBreak: 'break-word',
+        }}>{display}</p>
+      </div>
+    )
+  }
+
+  const SectionLabel = ({ children }) => (
+    <p style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a3a50', margin: '0 0 10px' }}>{children}</p>
+  )
+
+  const grid2 = { display: 'grid', gridTemplateColumns: mob ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 18 }
+  const grid3 = { display: 'grid', gridTemplateColumns: mob ? '1fr 1fr' : '1fr 1fr 1fr', gap: 8, marginBottom: 18 }
+
+  const isBooking = type === 'bookings'
+
+  // On mobile: bottom sheet anchored to bottom edge, full width, rounded top corners only
+  const sheetStyle = mob ? {
+    position: 'fixed', bottom: 0, left: 0, right: 0,
+    maxHeight: '92vh',
+    background: 'linear-gradient(180deg,#0f0f18,#080810)',
+    border: '1px solid rgba(201,168,76,.2)',
+    borderBottom: 'none',
+    borderRadius: '16px 16px 0 0',
+    display: 'flex', flexDirection: 'column',
+    boxShadow: '0 -24px 80px rgba(0,0,0,.9)',
+    overflow: 'hidden',
+    animation: 'slideUp .28s cubic-bezier(.16,1,.3,1)',
+  } : {
+    width: '100%', maxWidth: 620,
+    maxHeight: '88vh',
+    background: 'linear-gradient(145deg,#0d0d16,#080810)',
+    border: '1px solid rgba(201,168,76,.25)',
+    borderRadius: 16,
+    display: 'flex', flexDirection: 'column',
+    boxShadow: '0 48px 120px rgba(0,0,0,.85), 0 0 0 1px rgba(201,168,76,.06)',
+    overflow: 'hidden',
+    animation: 'fadeIn .2s ease',
+  }
+
+  return (
+    <>
+      <style>{`@keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }`}</style>
+      <div onClick={onBackdrop} style={{
+        position: 'fixed', inset: 0, zIndex: 600,
+        background: 'rgba(0,0,0,.75)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex',
+        alignItems: mob ? 'flex-end' : 'center',
+        justifyContent: 'center',
+        padding: mob ? 0 : '24px',
+        animation: 'fadeIn .2s ease',
+      }}>
+        <div style={sheetStyle}>
+
+          {/* Drag handle (mobile only) */}
+          {mob && (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,.12)' }} />
+            </div>
+          )}
+
+          {/* Header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: mob ? '10px 16px 12px' : '18px 24px',
+            borderBottom: '1px solid rgba(255,255,255,.05)',
+            flexShrink: 0,
+            background: 'rgba(0,0,0,.2)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+              <div style={{ width: 3, height: 20, background: '#c9a84c', borderRadius: 2, flexShrink: 0 }} />
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontFamily: "'DM Mono',monospace", fontSize: 8, letterSpacing: '0.24em', color: 'rgba(201,168,76,.5)', textTransform: 'uppercase', margin: '0 0 2px' }}>
+                  {isBooking ? 'Trip Enquiry' : 'Merch Order'}
+                </p>
+                <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: mob ? 13 : 15, fontWeight: 600, color: '#e8e0d0', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {isBooking ? (record.destination || 'Untitled') : (record.product || 'Untitled')}
+                </p>
+              </div>
+            </div>
+            <button onClick={onClose} style={{
+              background: 'transparent', border: '1px solid rgba(255,255,255,.08)',
+              color: '#555', width: 30, height: 30, borderRadius: 7, flexShrink: 0,
+              cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all .15s', fontFamily: "'DM Mono',monospace", marginLeft: 10,
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(244,67,54,.4)'; e.currentTarget.style.color = '#e57373' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)'; e.currentTarget.style.color = '#555' }}
+            >✕</button>
+          </div>
+
+          {/* Body */}
+          <div style={{ overflowY: 'auto', padding: mob ? '16px' : '24px', flex: 1, WebkitOverflowScrolling: 'touch' }}>
+
+            {isBooking ? (
+              <>
+                {record.timestamp && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '7px 11px', background: 'rgba(201,168,76,.05)', border: '1px solid rgba(201,168,76,.12)', borderRadius: 7 }}>
+                    <span style={{ color: '#c9a84c', fontSize: 11 }}>◷</span>
+                    <span style={{ fontFamily: "'DM Mono',monospace", fontSize: mob ? 9 : 10, color: '#888', letterSpacing: '0.06em' }}>{fmt(record.timestamp)}</span>
+                  </div>
+                )}
+
+                <div style={{ background: 'linear-gradient(135deg, rgba(201,168,76,.08), rgba(201,168,76,.03))', border: '1px solid rgba(201,168,76,.2)', borderRadius: 10, padding: mob ? '12px 14px' : '16px 18px', marginBottom: 18 }}>
+                  <p style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'rgba(201,168,76,.5)', margin: '0 0 4px' }}>Destination</p>
+                  <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: mob ? 18 : 22, color: '#c9a84c', margin: 0, letterSpacing: '-0.01em' }}>{record.destination || '—'}</p>
+                </div>
+
+                <SectionLabel>Contact</SectionLabel>
+                <div style={grid2}>
+                  <LabelValue label="Full Name" value={record.name} />
+                  <LabelValue label="Phone" value={fmtPhone(record.phone)} />
+                  <LabelValue label="Email" value={record.email} wide />
+                </div>
+
+                <SectionLabel>Trip Details</SectionLabel>
+                <div style={grid3}>
+                  <LabelValue label="Travel Date" value={record.date} />
+                  <LabelValue label="Travellers" value={record.travellers} gold />
+                  <LabelValue label="Budget" value={record.budget} gold span2 />
+                </div>
+
+                {record.message && (
+                  <>
+                    <SectionLabel>Message</SectionLabel>
+                    <div style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)', borderLeft: '3px solid rgba(201,168,76,.3)', borderRadius: '0 8px 8px 0', padding: mob ? '11px 13px' : '14px 16px', marginBottom: 8 }}>
+                      <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: mob ? 12 : 13, color: '#c8c0b8', margin: 0, lineHeight: 1.7 }}>{record.message}</p>
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                {record.timestamp && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '7px 11px', background: 'rgba(201,168,76,.05)', border: '1px solid rgba(201,168,76,.12)', borderRadius: 7 }}>
+                    <span style={{ color: '#c9a84c', fontSize: 11 }}>◷</span>
+                    <span style={{ fontFamily: "'DM Mono',monospace", fontSize: mob ? 9 : 10, color: '#888', letterSpacing: '0.06em' }}>{fmt(record.timestamp)}</span>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', alignItems: mob ? 'flex-start' : 'center', gap: 14, background: 'linear-gradient(135deg, rgba(201,168,76,.08), rgba(201,168,76,.03))', border: '1px solid rgba(201,168,76,.2)', borderRadius: 10, padding: mob ? '12px 14px' : '14px 18px', marginBottom: 18, flexWrap: mob ? 'wrap' : 'nowrap' }}>
+                  <span style={{ fontSize: 20, flexShrink: 0 }}>✦</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'rgba(201,168,76,.5)', margin: '0 0 3px' }}>Product</p>
+                    <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: mob ? 17 : 20, color: '#c9a84c', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{record.product || '—'}</p>
+                    <p style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: '#555', margin: 0 }}>{record.category}</p>
+                  </div>
+                  {record.price && (
+                    <div style={{ textAlign: mob ? 'left' : 'right', marginLeft: mob ? 34 : 'auto', marginTop: mob ? -4 : 0 }}>
+                      <p style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, letterSpacing: '0.2em', color: '#3a3a50', textTransform: 'uppercase', margin: '0 0 3px' }}>Price</p>
+                      <p style={{ fontFamily: "'DM Mono',monospace", fontSize: mob ? 16 : 20, fontWeight: 700, color: '#c9a84c', margin: 0 }}>{record.price}</p>
+                    </div>
+                  )}
+                </div>
+
+                <SectionLabel>Order Specs</SectionLabel>
+                <div style={grid3}>
+                  <LabelValue label="Size" value={record.size} gold />
+                  <LabelValue label="Sleeve" value={record.sleeve} gold />
+                  <LabelValue label="Height" value={record.height} />
+                  <LabelValue label="Age" value={record.age} />
+                </div>
+
+                <SectionLabel>Customer</SectionLabel>
+                <div style={grid2}>
+                  <LabelValue label="Name" value={record.name} />
+                  <LabelValue label="Phone" value={fmtPhone(record.phone)} />
+                  <LabelValue label="Email" value={record.email} wide />
+                </div>
+
+                {record.note && (
+                  <>
+                    <SectionLabel>Note</SectionLabel>
+                    <div style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)', borderLeft: '3px solid rgba(201,168,76,.3)', borderRadius: '0 8px 8px 0', padding: mob ? '11px 13px' : '14px 16px', marginBottom: 8 }}>
+                      <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: mob ? 12 : 13, color: '#c8c0b8', margin: 0, lineHeight: 1.7 }}>{record.note}</p>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div style={{
+            padding: mob ? '12px 16px calc(12px + env(safe-area-inset-bottom))' : '14px 24px',
+            borderTop: '1px solid rgba(255,255,255,.05)',
+            display: 'flex', justifyContent: 'flex-end',
+            flexShrink: 0,
+            background: 'rgba(0,0,0,.2)',
+          }}>
+            <button onClick={onClose} style={{
+              background: 'linear-gradient(135deg,#c9a84c,#e8c96a)',
+              border: 'none', color: '#060608',
+              padding: mob ? '11px 0' : '9px 28px',
+              width: mob ? '100%' : 'auto',
+              borderRadius: 7, cursor: 'pointer',
+              fontFamily: "'DM Mono',monospace", fontSize: 10, fontWeight: 700,
+              letterSpacing: '0.14em', textTransform: 'uppercase',
+              boxShadow: '0 4px 16px rgba(201,168,76,.3)',
+            }}>Close</button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
 function BookingsEditor({ onCount }) {
   const [bookings, setBookings] = useState([])
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('bookings')
   const [search, setSearch] = useState('')
+  const [selectedRecord, setSelectedRecord] = useState(null)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 10
+
+  // Reset page when tab or search changes
+  useEffect(() => { setPage(1) }, [tab, search])
 
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
 
@@ -1363,8 +1722,17 @@ function BookingsEditor({ onCount }) {
     ? ['timestamp','destination','name','phone','email','date','travellers','budget','message']
     : ['timestamp','product','category','price','name','phone','email','size','sleeve','height','age','note']
 
-  const fmt = (v) => {
+  const fmtPhone = (v) => {
+    if (!v) return v
+    const s = String(v).trim().replace(/\s+/g, '')
+    // 10-digit number missing the leading 0 (Google Sheets strips it) → restore it
+    if (/^\d{10}$/.test(s)) return '0' + s
+    return s
+  }
+
+  const fmt = (v, col) => {
     if (!v) return <span style={{ color:'#2a2a38' }}>—</span>
+    if (col === 'phone') return fmtPhone(v)
     if (typeof v === 'string' && v.match(/^\d{4}-\d{2}-\d{2}T/)) {
       return new Date(v).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
     }
@@ -1391,6 +1759,13 @@ function BookingsEditor({ onCount }) {
 
   return (
     <div>
+      {selectedRecord && (
+        <RecordDetailModal
+          record={selectedRecord}
+          type={tab}
+          onClose={() => setSelectedRecord(null)}
+        />
+      )}
       <div style={{ marginBottom:28 }}>
         <p style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.22em', color:'#c9a84c', textTransform:'uppercase', margin:'0 0 8px', opacity:0.7 }}>Live data</p>
         <h2 style={{ fontFamily:"'DM Serif Display',serif", fontSize:26, fontWeight:400, color:'#e8e0d0', margin:'0 0 6px', letterSpacing:'-0.02em' }}>Bookings & Orders</h2>
@@ -1464,25 +1839,28 @@ function BookingsEditor({ onCount }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((row, i) => (
+              {filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE).map((row, i) => (
                 <tr key={i} style={{
                   borderBottom:'1px solid rgba(255,255,255,.03)',
                   background: i%2===0 ? 'transparent' : 'rgba(255,255,255,.01)',
                   transition:'background .15s',
+                  cursor:'pointer',
+                  height: 44,
                 }}
+                  onClick={() => setSelectedRecord(row)}
                   onMouseEnter={e=>e.currentTarget.style.background='rgba(201,168,76,.04)'}
                   onMouseLeave={e=>e.currentTarget.style.background=i%2===0?'transparent':'rgba(255,255,255,.01)'}
                 >
                   {cols.map(col => (
                     <td key={col} style={{
-                      padding:'10px 12px', color:'#c8c0b8', verticalAlign:'top',
-                      maxWidth: col==='message'||col==='note' ? 200 : col==='email' ? 160 : 'none',
-                      whiteSpace: col==='message'||col==='note' ? 'normal' : 'nowrap',
-                      overflow:'hidden', textOverflow:'ellipsis',
+                      padding:'0 12px', color:'#c8c0b8',
+                      whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+                      maxWidth: col==='message'||col==='note' ? 180 : col==='email' ? 160 : col==='timestamp' ? 140 : 'none',
+                      height: 44,
                     }}>
                       {col==='destination'||col==='product'
-                        ? <span style={{ color:'#c9a84c', fontWeight:500 }}>{fmt(row[col])}</span>
-                        : fmt(row[col])
+                        ? <span style={{ color:'#c9a84c', fontWeight:500 }}>{fmt(row[col], col)}</span>
+                        : fmt(row[col], col)
                       }
                     </td>
                   ))}
@@ -1490,6 +1868,79 @@ function BookingsEditor({ onCount }) {
               ))}
             </tbody>
           </table>
+
+          {/* Pagination */}
+          {filtered.length > PAGE_SIZE && (() => {
+            const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+            return (
+              <div style={{
+                display:'flex', alignItems:'center', justifyContent:'space-between',
+                padding:'14px 4px 4px',
+                borderTop:'1px solid rgba(255,255,255,.04)',
+                marginTop:4,
+              }}>
+                <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, color:'#3a3a50', letterSpacing:'0.14em' }}>
+                  {(page-1)*PAGE_SIZE+1}–{Math.min(page*PAGE_SIZE, filtered.length)} of {filtered.length}
+                </span>
+                <div style={{ display:'flex', gap:4 }}>
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p-1))}
+                    disabled={page===1}
+                    style={{
+                      background:'transparent',
+                      border:'1px solid rgba(255,255,255,.07)',
+                      color: page===1 ? '#252535' : '#666',
+                      width:28, height:28, borderRadius:5, cursor: page===1 ? 'default' : 'pointer',
+                      fontFamily:"'DM Mono',monospace", fontSize:11,
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      transition:'all .15s',
+                    }}
+                    onMouseEnter={e=>{ if(page!==1){ e.currentTarget.style.borderColor='rgba(255,255,255,.18)'; e.currentTarget.style.color='#aaa' }}}
+                    onMouseLeave={e=>{ e.currentTarget.style.borderColor='rgba(255,255,255,.07)'; e.currentTarget.style.color=page===1?'#252535':'#666' }}
+                  >‹</button>
+
+                  {Array.from({length: totalPages}, (_, i) => i+1)
+                    .filter(n => n===1 || n===totalPages || Math.abs(n-page)<=1)
+                    .reduce((acc, n, idx, arr) => {
+                      if (idx > 0 && n - arr[idx-1] > 1) acc.push('…')
+                      acc.push(n)
+                      return acc
+                    }, [])
+                    .map((n, idx) => n === '…'
+                      ? <span key={`ellipsis-${idx}`} style={{ color:'#2a2a38', fontFamily:"'DM Mono',monospace", fontSize:11, padding:'0 2px', lineHeight:'28px' }}>…</span>
+                      : <button key={n} onClick={() => setPage(n)} style={{
+                          background: page===n ? 'rgba(201,168,76,.12)' : 'transparent',
+                          border:`1px solid ${page===n ? 'rgba(201,168,76,.4)' : 'rgba(255,255,255,.07)'}`,
+                          color: page===n ? '#c9a84c' : '#555',
+                          width:28, height:28, borderRadius:5, cursor:'pointer',
+                          fontFamily:"'DM Mono',monospace", fontSize:10,
+                          transition:'all .15s',
+                        }}
+                        onMouseEnter={e=>{ if(page!==n){ e.currentTarget.style.borderColor='rgba(255,255,255,.18)'; e.currentTarget.style.color='#aaa' }}}
+                        onMouseLeave={e=>{ e.currentTarget.style.borderColor=page===n?'rgba(201,168,76,.4)':'rgba(255,255,255,.07)'; e.currentTarget.style.color=page===n?'#c9a84c':'#555' }}
+                      >{n}</button>
+                    )
+                  }
+
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p+1))}
+                    disabled={page===totalPages}
+                    style={{
+                      background:'transparent',
+                      border:'1px solid rgba(255,255,255,.07)',
+                      color: page===totalPages ? '#252535' : '#666',
+                      width:28, height:28, borderRadius:5, cursor: page===totalPages ? 'default' : 'pointer',
+                      fontFamily:"'DM Mono',monospace", fontSize:11,
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      transition:'all .15s',
+                    }}
+                    onMouseEnter={e=>{ if(page!==totalPages){ e.currentTarget.style.borderColor='rgba(255,255,255,.18)'; e.currentTarget.style.color='#aaa' }}}
+                    onMouseLeave={e=>{ e.currentTarget.style.borderColor='rgba(255,255,255,.07)'; e.currentTarget.style.color=page===totalPages?'#252535':'#666' }}
+                  >›</button>
+                </div>
+              </div>
+            )
+          })()}
         </div>
       )}
     </div>
@@ -1602,13 +2053,26 @@ function PreviewPanel({ active, data }) {
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
 
-function AdminPage() {
+function AdminPage({ activeUser, onLogout }) {
   const [data, setData] = useState(deepClone(INIT))
   const [active, setActive] = useState('destinations')
   const [toast, setToast] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
+  const [vw, setVw] = useState(window.innerWidth)
+  const isMobile = vw < 640
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
+
+  useEffect(() => {
+    const handle = () => {
+      const w = window.innerWidth
+      setVw(w)
+      if (w >= 640) setSidebarOpen(prev => prev === false && w >= 640 ? true : prev)
+    }
+    window.addEventListener('resize', handle)
+    return () => window.removeEventListener('resize', handle)
+  }, [])
 
   const upd = (key) => (val) => { setData(prev => ({ ...prev, [key]: val })); setDirty(true) }
 
@@ -1706,6 +2170,32 @@ function AdminPage() {
       }}>
         {/* Left: breadcrumb */}
         <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+          {/* Hamburger — always visible on mobile, hidden on desktop (desktop uses sidebar's own toggle) */}
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen(o => !o)}
+              style={{
+                background:'transparent',
+                border:'1px solid rgba(255,255,255,.07)',
+                color:'#666', width:32, height:32,
+                borderRadius:7, cursor:'pointer',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                flexDirection:'column', gap:4,
+                flexShrink:0, transition:'all .15s',
+              }}
+              onMouseEnter={e=>{ e.currentTarget.style.borderColor='rgba(201,168,76,.4)'; e.currentTarget.style.color='#c9a84c' }}
+              onMouseLeave={e=>{ e.currentTarget.style.borderColor='rgba(255,255,255,.07)'; e.currentTarget.style.color='#666' }}
+            >
+              {sidebarOpen
+                ? <span style={{ fontSize:14, lineHeight:1, fontFamily:"'DM Mono',monospace" }}>✕</span>
+                : <>
+                    <span style={{ display:'block', width:14, height:1.5, background:'currentColor', borderRadius:1 }} />
+                    <span style={{ display:'block', width:14, height:1.5, background:'currentColor', borderRadius:1 }} />
+                    <span style={{ display:'block', width:10, height:1.5, background:'currentColor', borderRadius:1 }} />
+                  </>
+              }
+            </button>
+          )}
           <a href="/">
             <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:48, display:'block' }} />
           </a>
@@ -1757,21 +2247,30 @@ function AdminPage() {
       </div>
 
       {/* BODY */}
-      <div style={{ flex:1, display:'flex', minHeight:0 }}>
-        <SideNav active={active} onSelect={setActive} data={data} />
+      <div style={{ flex:1, display:'flex', minHeight:0, position:'relative' }}>
+        <SideNav
+          active={active}
+          onSelect={setActive}
+          data={data}
+          open={sidebarOpen}
+          onToggle={() => setSidebarOpen(o => !o)}
+          isMobile={isMobile}
+          activeUser={activeUser}
+          onLogout={onLogout}
+        />
 
         {/* MAIN EDITOR */}
         <div style={{
-          flex:1, padding:'36px 40px',
+          flex:1, padding: isMobile ? '24px 18px' : '36px 40px',
           overflowY:'auto', minWidth:0,
           animation:'fadeIn .2s ease',
         }}>
-          {active==='hero' && <HeroEditor data={data.hero} onChange={upd('hero')} />}
+          {active==='hero' && (activeUser === 'bibitayouthman' ? <HeroEditor data={data.hero} onChange={upd('hero')} /> : <ComingSoonGate section="Hero"><HeroEditor data={data.hero} onChange={upd('hero')} /></ComingSoonGate>)}
           {active==='destinations' && <DestinationsEditor data={data.destinations} onChange={upd('destinations')} />}
           {active==='merch' && <MerchEditor data={data.merch} onChange={upd('merch')} />}
-          {active==='about' && <AboutEditor data={data.about} onChange={upd('about')} />}
-          {active==='navbar' && <NavbarEditor data={data.navbar} onChange={upd('navbar')} />}
-          {active==='footer' && <FooterEditor data={data.footer} onChange={upd('footer')} />}
+          {active==='about' && (activeUser === 'bibitayouthman' ? <AboutEditor data={data.about} onChange={upd('about')} /> : <ComingSoonGate section="About"><AboutEditor data={data.about} onChange={upd('about')} /></ComingSoonGate>)}
+          {active==='navbar' && (activeUser === 'bibitayouthman' ? <NavbarEditor data={data.navbar} onChange={upd('navbar')} /> : <ComingSoonGate section="Navbar"><NavbarEditor data={data.navbar} onChange={upd('navbar')} /></ComingSoonGate>)}
+          {active==='footer' && (activeUser === 'bibitayouthman' ? <FooterEditor data={data.footer} onChange={upd('footer')} /> : <ComingSoonGate section="Footer"><FooterEditor data={data.footer} onChange={upd('footer')} /></ComingSoonGate>)}
           {active==='bookings' && <BookingsEditor onCount={c => setData(prev => ({...prev, bookingCount: c}))} />}
         </div>
 
@@ -1797,10 +2296,123 @@ function AdminPage() {
   )
 }
 
-// ─── AUTH GATE ────────────────────────────────────────────────────────────────
+// ─── COMING SOON GATE ────────────────────────────────────────────────────────
+// Wrap a section editor to show a "Coming Soon" overlay.
+// The editor renders beneath it — content is visible but unreachable.
+// TO UNLOCK: remove the <ComingSoonGate> wrapper around the relevant editor
+// and delete this component once all sections are paid for and live.
+
+function ComingSoonGate({ section, children }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      {/* The real editor — rendered, visible, but covered */}
+      <div style={{ pointerEvents: 'none', userSelect: 'none' }}>
+        {children}
+      </div>
+
+      {/* Overlay — sits on top, no blur on the content underneath */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        zIndex: 10,
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        paddingTop: 60,
+      }}>
+        <div style={{
+          width: '100%', maxWidth: 480,
+          background: 'linear-gradient(145deg, #0c0c16, #09090f)',
+          border: '1px solid rgba(201,168,76,.3)',
+          borderRadius: 16,
+          padding: '36px 36px 32px',
+          boxShadow: '0 32px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(201,168,76,.06)',
+          textAlign: 'center',
+          animation: 'fadeIn .25s ease',
+        }}>
+          {/* Lock icon */}
+          <div style={{
+            width: 52, height: 52, borderRadius: '50%',
+            background: 'rgba(201,168,76,.08)',
+            border: '1px solid rgba(201,168,76,.2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 20px',
+            fontSize: 22,
+          }}>🔒</div>
+
+          {/* Section tag */}
+          <p style={{
+            fontFamily: "'DM Mono',monospace", fontSize: 9,
+            letterSpacing: '0.3em', textTransform: 'uppercase',
+            color: 'rgba(201,168,76,.5)', margin: '0 0 10px',
+          }}>{section}</p>
+
+          {/* Headline */}
+          <h3 style={{
+            fontFamily: "'DM Serif Display',serif", fontSize: 26,
+            fontWeight: 400, color: '#e8e0d0',
+            margin: '0 0 12px', letterSpacing: '-0.02em', lineHeight: 1.2,
+          }}>Coming Soon</h3>
+
+          {/* Subtext */}
+          <p style={{
+            fontFamily: "'DM Sans',sans-serif", fontSize: 13,
+            color: '#4a4a62', lineHeight: 1.7, margin: '0 0 24px',
+          }}>
+            This section is not yet active. Unlock it to edit your{' '}
+            <span style={{ color: '#c9a84c' }}>{section.toLowerCase()}</span>{' '}
+            content and push changes live.
+          </p>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: 'rgba(255,255,255,.05)', margin: '0 0 20px' }} />
+
+          {/* CTA */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10,
+            background: 'rgba(201,168,76,.07)',
+            border: '1px solid rgba(201,168,76,.2)',
+            borderRadius: 8, padding: '10px 18px',
+          }}>
+            <span style={{ fontSize: 14 }}>✉</span>
+            <span style={{
+              fontFamily: "'DM Mono',monospace", fontSize: 10,
+              color: '#c9a84c', letterSpacing: '0.06em', lineHeight: 1.5,
+            }}>
+              Contact us to unlock this section
+            </span>
+          </div>
+
+          {/* Dev note — clearly marked for easy removal */}
+          <div style={{
+            marginTop: 22,
+            background: 'rgba(244,67,54,.04)',
+            border: '1px dashed rgba(244,67,54,.2)',
+            borderRadius: 6, padding: '10px 14px',
+            textAlign: 'left',
+          }}>
+            <p style={{
+              fontFamily: "'DM Mono',monospace", fontSize: 9,
+              letterSpacing: '0.14em', color: 'rgba(244,67,54,.5)',
+              margin: '0 0 4px', textTransform: 'uppercase',
+            }}>
+              ◈ Dev note — remove to unlock
+            </p>
+            <p style={{
+              fontFamily: "'DM Mono',monospace", fontSize: 9,
+              color: '#2e2e42', margin: 0, lineHeight: 1.7, letterSpacing: '0.04em',
+            }}>
+              Wrap removed in <span style={{ color:'rgba(244,67,54,.4)' }}>/AdminPage.jsx</span> once client pays.{'\n'}
+              Delete <span style={{ color:'rgba(244,67,54,.4)' }}>{'<ComingSoonGate>'}</span> + this component when all sections are live.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 
 export default function AdminPageWithAuth() {
-  const [authed, setAuthed] = useState(false)
-  if (!authed) return <LoginScreen onLogin={() => setAuthed(true)} />
-  return <AdminPage />
+  const [activeUser, setActiveUser] = useState(null)
+  if (!activeUser) return <LoginScreen onLogin={(name) => setActiveUser(name)} />
+  return <AdminPage activeUser={activeUser} onLogout={() => setActiveUser(null)} />
 }

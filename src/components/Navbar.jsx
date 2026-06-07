@@ -10,9 +10,20 @@ const navLinks = [
 function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [scale, setScale] = useState(1)
   const prefersReduced = useReducedMotion()
   const drawerRef = useRef(null)
   const hamburgerRef = useRef(null)
+
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth
+      setScale(w >= 768 && w < 1280 ? w / 1280 : 1)
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -78,6 +89,11 @@ function Navbar() {
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={transition}
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          width: scale < 1 ? `${100 / scale}%` : '100%',
+        }}
       >
         {/* Logo */}
         <a href="/" className="navbar__logo" aria-label="CMWG — home">
@@ -214,7 +230,8 @@ function Navbar() {
         /* ── Navbar ── */
         .navbar {
           position: fixed;
-          top: 0; left: 0; right: 0;
+          top: 0; left: 0;
+          width: 100%;
           height: var(--nav-h);
           z-index: 999;
 

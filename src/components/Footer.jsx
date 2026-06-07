@@ -185,6 +185,7 @@ function Footer() {
           display: flex;
           gap: 1rem;
           margin-top: 0.25rem;
+          flex-wrap: wrap;
         }
         .footer__social {
           display: flex;
@@ -264,15 +265,60 @@ function Footer() {
           margin: 0;
         }
 
+        /* Tablet: brand stacks above nav, nav stays 3-col */
         @media (max-width: 900px) {
-          .footer__top { grid-template-columns: 1fr; gap: 3rem; }
+          .footer__top {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+          }
+          .footer {
+            padding-top: 3rem;
+            padding-bottom: 2rem;
+          }
+          .footer__brand {
+            gap: 0.85rem;
+          }
         }
-        @media (max-width: 580px) {
-          .footer__nav { grid-template-columns: repeat(2, 1fr); }
-          .footer__bottom { flex-direction: column; align-items: flex-start; }
+
+        /* Large mobile (≤600px): Explore + Company side by side, Legal full-width below */
+        @media (max-width: 600px) {
+          .footer__nav {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+          }
+          /* Legal spans both columns so it's never squished */
+          .footer__col:last-child {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: start;
+            gap: 0 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(201,168,76,0.08);
+          }
+          /* heading sits above both columns */
+          .footer__col:last-child .footer__col-heading {
+            grid-column: 1 / -1;
+          }
+          .footer__bottom {
+            flex-direction: column;
+            align-items: flex-start;
+          }
         }
-        @media (max-width: 360px) {
-          .footer__nav { grid-template-columns: 1fr; }
+
+        /* Small mobile (≤400px): everything single column */
+        @media (max-width: 400px) {
+          .footer__nav {
+            grid-template-columns: 1fr;
+          }
+          .footer__col:last-child {
+            grid-column: unset;
+            display: flex;
+            flex-direction: column;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(201,168,76,0.08);
+          }
         }
       `}</style>
     </footer>
