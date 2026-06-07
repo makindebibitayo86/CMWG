@@ -366,6 +366,18 @@ export default function Destinations() {
     ? places
     : places.filter(p => p.category === activeCategory)
 
+  const [activeDot, setActiveDot] = useState(0)
+  const dotCount = loadingPlaces ? 4 : filtered.length
+
+  const onScroll = () => {
+    const el = scrollRef.current
+    if (!el) return
+    const max = el.scrollWidth - el.clientWidth
+    if (max <= 0) { setActiveDot(0); return }
+    const idx = Math.round((el.scrollLeft / max) * (dotCount - 1))
+    setActiveDot(Math.min(idx, dotCount - 1))
+  }
+
   const drag = useRef({ isDown: false, startX: 0, scrollLeft: 0, velocity: 0, frame: null })
 
   const onDown = (e) => {
@@ -442,6 +454,7 @@ export default function Destinations() {
         onMouseUp={onUp}
         onMouseLeave={onUp}
         onMouseMove={onMove}
+        onScroll={onScroll}
       >
         {loadingPlaces
           ? Array.from({ length: 4 }).map((_, i) => (
@@ -483,6 +496,18 @@ export default function Destinations() {
         ))
       }
       </div>
+
+      {/* SCROLL DOTS */}
+      {dotCount > 1 && (
+        <div className="dest__dots">
+          {Array.from({ length: dotCount }).map((_, i) => (
+            <div
+              key={i}
+              className={`dest__dot${activeDot === i ? ' active' : ''}`}
+            />
+          ))}
+        </div>
+      )}
 
       {activeModal && (
         <Modal place={activeModal} onClose={() => setActiveModal(null)} />
@@ -995,6 +1020,29 @@ export default function Destinations() {
         .btn-close-success:hover {
           background: #c9a84c;
           color: #080808;
+        }
+        /* SCROLL DOTS */
+        .dest__dots {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 0.45rem;
+          margin-top: 1.8rem;
+        }
+
+        .dest__dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.15);
+          transition: all 0.3s ease;
+          flex-shrink: 0;
+        }
+
+        .dest__dot.active {
+          width: 22px;
+          border-radius: 3px;
+          background: #c9a84c;
         }
       `}</style>
     </section>

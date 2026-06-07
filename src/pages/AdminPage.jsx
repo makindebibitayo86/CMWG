@@ -375,6 +375,129 @@ function CloudinaryUpload({ label, value, onChange }) {
 
 
 
+// ─── CLOUDINARY VIDEO UPLOAD ─────────────────────────────────────────────────
+
+function CloudinaryVideoUpload({ label, value, onChange }) {
+  const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [error, setError] = useState('')
+  const inputRef = useRef(null)
+
+  const handleFile = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploading(true)
+    setProgress(0)
+    setError('')
+
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('upload_preset', CLOUDINARY_PRESET)
+    fd.append('folder', 'cmwg')
+
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/video/upload`)
+
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable) setProgress(Math.round((ev.loaded / ev.total) * 100))
+    }
+
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText)
+        if (data.secure_url) onChange(data.secure_url)
+        else setError('Upload failed')
+      } catch { setError('Upload failed') }
+      setUploading(false)
+      e.target.value = ''
+    }
+
+    xhr.onerror = () => { setError('Upload failed'); setUploading(false) }
+    xhr.send(fd)
+  }
+
+  return (
+    <div style={{ marginBottom:16 }}>
+      <label style={{ display:'block', fontSize:9, letterSpacing:'0.22em', color:'#3a3a50', textTransform:'uppercase', marginBottom:6, fontFamily:"'DM Mono',monospace", fontWeight:500 }}>{label}</label>
+      <div style={{ display:'flex', gap:8, alignItems:'flex-start', flexDirection:'column' }}>
+        <input
+          type="text" value={value} onChange={e=>onChange(e.target.value)}
+          placeholder="https://res.cloudinary.com/... or upload below"
+          style={{
+            width:'100%', background:'#090910', border:'1px solid #1a1a28',
+            borderRadius:7, color:'#d8d0c8', fontFamily:"'DM Mono',monospace",
+            fontSize:12, padding:'10px 12px', boxSizing:'border-box', outline:'none',
+            transition:'all .18s', letterSpacing:'0.02em',
+          }}
+          onFocus={e=>e.target.style.borderColor='#c9a84c'}
+          onBlur={e=>e.target.style.borderColor='#1a1a28'}
+        />
+
+        <div style={{ display:'flex', alignItems:'center', gap:10, width:'100%' }}>
+          <button
+            onClick={()=>inputRef.current?.click()}
+            disabled={uploading}
+            style={{
+              background: uploading ? 'rgba(201,168,76,.1)' : 'transparent',
+              border:'1px solid rgba(201,168,76,.35)',
+              color: uploading ? '#8a7030' : '#c9a84c',
+              padding:'6px 14px', borderRadius:6, cursor: uploading?'not-allowed':'pointer',
+              fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.14em',
+              display:'flex', alignItems:'center', gap:6, transition:'all .15s', flexShrink:0,
+            }}
+          >
+            {uploading
+              ? <><span style={{ display:'inline-block', width:8, height:8, border:'1px solid #8a7030', borderTop:'1px solid #c9a84c', borderRadius:'50%', animation:'spin .6s linear infinite' }} /> Uploading…</>
+              : <>▶ Upload Video</>
+            }
+          </button>
+
+          {/* Progress bar */}
+          {uploading && (
+            <div style={{ flex:1, height:3, background:'rgba(255,255,255,.06)', borderRadius:2, overflow:'hidden' }}>
+              <div style={{
+                height:'100%', borderRadius:2,
+                background:'linear-gradient(90deg,#c9a84c,#e8c96a)',
+                width:`${progress}%`, transition:'width .2s ease',
+              }} />
+            </div>
+          )}
+          {uploading && (
+            <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, color:'#c9a84c', flexShrink:0 }}>{progress}%</span>
+          )}
+          {error && <span style={{ color:'#e57373', fontFamily:"'DM Mono',monospace", fontSize:10 }}>{error}</span>}
+        </div>
+
+        <input ref={inputRef} type="file" accept="video/*" onChange={handleFile} style={{ display:'none' }} />
+
+        {/* Preview */}
+        {value && !uploading && (
+          <div style={{ width:'100%', borderRadius:7, overflow:'hidden', height:100, marginTop:2, background:'#080810', position:'relative' }}>
+            <video src={value} muted loop playsInline
+              style={{ width:'100%', height:'100%', objectFit:'cover' }}
+              onMouseEnter={e=>e.target.play()}
+              onMouseLeave={e=>{ e.target.pause(); e.target.currentTime=0 }}
+            />
+            <div style={{
+              position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
+              pointerEvents:'none',
+            }}>
+              <div style={{
+                width:28, height:28, borderRadius:'50%',
+                background:'rgba(0,0,0,.55)', border:'1px solid rgba(201,168,76,.4)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                <span style={{ color:'#c9a84c', fontSize:10, marginLeft:2 }}>▶</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+
 function Pill({ label }) {
   if (!label) return null
   const styles = {
@@ -744,15 +867,18 @@ function EditModal({ title, onClose, children }) {
 
 function DestinationsEditor({ data, onChange }) {
   const [editing, setEditing] = useState(null)
+  const [form, setForm] = useState(null)
 
-  const form = editing ? data.find(d => d.id === editing) : null
-
-  const openEdit = (item) => setEditing(item.id)
-  const closeEdit = () => setEditing(null)
-  const updateForm = (patch) => onChange(data.map(d => d.id === editing ? { ...d, ...patch } : d))
-  const deleteItem = (id) => { if (editing === id) setEditing(null); onChange(data.filter(d=>d.id!==id)) }
+  const openEdit = (item) => { setEditing(item.id); setForm({...item}) }
+  const closeEdit = () => { setEditing(null); setForm(null) }
+  const updateForm = (patch) => {
+    const updated = { ...form, ...patch }
+    setForm(updated)
+    onChange(data.map(d => String(d.id) === String(editing) ? updated : d))
+  }
+  const deleteItem = (id) => { if (String(editing) === String(id)) closeEdit(); onChange(data.filter(d=>String(d.id)!==String(id))) }
   const addNew = () => {
-    const n = { id:Date.now(), title:'New Destination', desc:'', tagline:'', price:'', img:'', category:'West Africa' }
+    const n = { id:Date.now(), title:'New Destination', desc:'', tagline:'', price:'', img:'', video:'', category:'West Africa', highlights:[], bestTime:'', duration:'' }
     onChange([...data,n]); openEdit(n)
   }
 
@@ -767,7 +893,7 @@ function DestinationsEditor({ data, onChange }) {
       />
 
       {editing && form && (
-        <EditModal title={`Editing — ${form.title}`} onClose={closeEdit}>
+        <EditModal key={editing} title={`Editing — ${form.title}`} onClose={closeEdit}>
           <div style={S.grid2}>
             <Field label="Title" value={form.title} onChange={v=>updateForm({title:v})} />
             <div style={{ marginBottom:16 }}>
@@ -787,6 +913,12 @@ function DestinationsEditor({ data, onChange }) {
             <Field label="Price (optional)" value={form.price} onChange={v=>updateForm({price:v})} placeholder="e.g. $1,200" />
           </div>
           <CloudinaryUpload label="Destination Image" value={form.img} onChange={v=>updateForm({img:v})} />
+          <CloudinaryVideoUpload label="Background Video (plays in modal)" value={form.video||''} onChange={v=>updateForm({video:v})} />
+          <div style={S.grid2}>
+            <Field label="Best time to visit" value={form.bestTime||''} onChange={v=>updateForm({bestTime:v})} placeholder="e.g. Nov – Feb" />
+            <Field label="Trip duration" value={form.duration||''} onChange={v=>updateForm({duration:v})} placeholder="e.g. 3–5 days" />
+          </div>
+          <Field label="Highlights (pipe-separated)" value={Array.isArray(form.highlights) ? form.highlights.join('|') : (form.highlights||'')} onChange={v=>updateForm({highlights:v.split('|').map(s=>s.trim()).filter(Boolean)})} placeholder="Lekki Beach|Victoria Island|Street food culture" />
         </EditModal>
       )}
 
@@ -805,7 +937,10 @@ function DestinationsEditor({ data, onChange }) {
                 </div>
             }
             <div style={{ flex:1, minWidth:0 }}>
-              <p style={{ color:'#e8e0d0', fontSize:13, fontWeight:500, margin:'0 0 3px', fontFamily:"'DM Sans',sans-serif" }}>{dest.title}</p>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
+                <p style={{ color:'#e8e0d0', fontSize:13, fontWeight:500, margin:0, fontFamily:"'DM Sans',sans-serif" }}>{dest.title}</p>
+                {dest.video && <span style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.1em', color:'#c9a84c', background:'rgba(201,168,76,.08)', border:'1px solid rgba(201,168,76,.2)', padding:'2px 7px', borderRadius:3 }}>▶ video</span>}
+              </div>
               <p style={{ color:'#3a3a50', fontSize:11, margin:0, fontFamily:"'DM Mono',monospace", whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{dest.desc}</p>
             </div>
             <span style={{
@@ -837,19 +972,17 @@ function DestinationsEditor({ data, onChange }) {
 
 function MerchEditor({ data, onChange }) {
   const [editing, setEditing] = useState(null)
+  const [form, setForm] = useState(null)
 
-  // form reads directly from data — no separate form state
-  const form = editing ? data.find(d => d.id === editing) : null
-
-  const openEdit = (item) => setEditing(item.id)
-  const closeEdit = () => setEditing(null)
-
-  // Every field change writes directly into parent data immediately
+  const openEdit = (item) => { setEditing(item.id); setForm({...item}) }
+  const closeEdit = () => { setEditing(null); setForm(null) }
   const updateForm = (patch) => {
-    onChange(data.map(d => d.id === editing ? { ...d, ...patch } : d))
+    const updated = { ...form, ...patch }
+    setForm(updated)
+    onChange(data.map(d => String(d.id) === String(editing) ? updated : d))
   }
 
-  const deleteItem = (id) => { if (editing === id) setEditing(null); onChange(data.filter(d=>d.id!==id)) }
+  const deleteItem = (id) => { if (String(editing) === String(id)) closeEdit(); onChange(data.filter(d=>String(d.id)!==String(id))) }
   const addNew = () => {
     const n = { id:Date.now(), name:'New Product', price:'$0', tag:'', desc:'', category:'Travel Gear', imgs:[], fields:['note'] }
     onChange([...data, n]); openEdit(n)
@@ -857,8 +990,12 @@ function MerchEditor({ data, onChange }) {
 
   const ALL_FIELDS = ['sleeve','size','height','age','note']
   const [activeImg, setActiveImg] = useState(0)
+  const [uploadingSlots, setUploadingSlots] = useState(new Set())
   const imgInputRefs = useRef({})
   const addSlotRef = useRef(null)
+
+  // Reset image state when switching to a different item
+  useEffect(() => { setActiveImg(0); setUploadingSlots(new Set()); imgInputRefs.current = {} }, [editing])
 
   const updateImg = (i,v) => { const imgs=[...(form?.imgs||[])]; imgs[i]=v; updateForm({imgs}); setActiveImg(i) }
   const removeImg = (i) => {
@@ -871,8 +1008,6 @@ function MerchEditor({ data, onChange }) {
     const fields = (form?.fields||[]).includes(f)?(form?.fields||[]).filter(x=>x!==f):[...(form?.fields||[]),f]
     updateForm({fields})
   }
-
-  const [uploadingSlots, setUploadingSlots] = useState(new Set())
 
   const setSlotLoading = (i, on) => setUploadingSlots(prev => {
     const s = new Set(prev); on ? s.add(i) : s.delete(i); return s
@@ -916,7 +1051,7 @@ function MerchEditor({ data, onChange }) {
       />
 
       {editing && form && (
-        <EditModal title={`Editing — ${form.name}`} onClose={closeEdit}>
+        <EditModal key={editing} title={`Editing — ${form.name}`} onClose={closeEdit}>
           <div style={S.grid3}>
             <Field label="Product name" value={form.name} onChange={v=>updateForm({name:v})} />
             <Field label="Price" value={form.price} onChange={v=>updateForm({price:v})} placeholder="$35" />
@@ -1344,8 +1479,8 @@ function AdminPage() {
       .then(([destRes, merchRes]) => {
         setData(prev => ({
           ...prev,
-          ...(destRes.data?.length ? { destinations: destRes.data.map(d=>({...d,id:d.id||Date.now()})) } : {}),
-          ...(merchRes.data?.length ? { merch: merchRes.data.map(m=>({...m,id:m.id||Date.now()})) } : {}),
+          ...(destRes.data?.length ? { destinations: destRes.data.map(d=>({...d,id:Number(d.id)||Date.now()})) } : {}),
+          ...(merchRes.data?.length ? { merch: merchRes.data.map(m=>({...m,id:Number(m.id)||Date.now()})) } : {}),
         }))
       })
       .catch(()=>{})
