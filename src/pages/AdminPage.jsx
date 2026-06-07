@@ -529,7 +529,7 @@ const NAV_SECTIONS = [
 const OPS_SECTIONS = [
   { key:'destinations', label:'Destinations', icon:'◎', desc:'Trip listings' },
   { key:'merch', label:'Shop', icon:'✦', desc:'Merch catalog' },
-  { key:'bookings', label:'Bookings', icon:'📅', desc:'Trip reservations' },
+  { key:'bookings', label:'Bookings', icon:'◉', desc:'Enquiries & orders' },
 ]
 
 const CONFIG_SECTIONS = [
@@ -544,11 +544,10 @@ function SideNav({ active, onSelect, data }) {
 
   const NavBtn = ({ s }) => {
     const isActive = active === s.key
-    const isComingSoon = s.key === 'bookings'
     return (
       <button
         key={s.key}
-        onClick={() => !isComingSoon && onSelect(s.key)}
+        onClick={() => onSelect(s.key)}
         style={{
           display:'flex', alignItems:'center', gap:12,
           width:'100%', padding:'9px 10px', marginBottom:2,
@@ -556,23 +555,19 @@ function SideNav({ active, onSelect, data }) {
           border:'none',
           borderLeft:`2px solid ${isActive?'#c9a84c':'transparent'}`,
           borderRadius:'0 7px 7px 0',
-          color: isActive?'#c9a84c': isComingSoon ? '#2a2a3a' : '#444',
-          cursor: isComingSoon ? 'default' : 'pointer',
+          color: isActive ? '#c9a84c' : '#444',
+          cursor:'pointer',
           textAlign:'left',
           transition:'all .15s',
-          opacity: isComingSoon ? 0.6 : 1,
         }}
-        onMouseEnter={e=>{ if(!isActive && !isComingSoon){ e.currentTarget.style.background='rgba(255,255,255,.02)'; e.currentTarget.style.color='#777' } }}
-        onMouseLeave={e=>{ if(!isActive && !isComingSoon){ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#444' } }}
+        onMouseEnter={e=>{ if(!isActive){ e.currentTarget.style.background='rgba(255,255,255,.02)'; e.currentTarget.style.color='#777' } }}
+        onMouseLeave={e=>{ if(!isActive){ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#444' } }}
       >
         <span style={{ fontSize:15, width:20, textAlign:'center', flexShrink:0 }}>{s.icon}</span>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:isActive?600:400, letterSpacing:'0.01em', lineHeight:1.2 }}>{s.label}</div>
           <div style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.1em', color:isActive?'rgba(201,168,76,.5)':'#2a2a3a', marginTop:1 }}>{s.desc}</div>
         </div>
-        {isComingSoon && (
-          <span style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.1em', color:'#2a2a3a', background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.07)', padding:'2px 6px', borderRadius:4, flexShrink:0 }}>soon</span>
-        )}
       </button>
     )
   }
@@ -641,6 +636,7 @@ function SideNav({ active, onSelect, data }) {
           ['Destinations', data.destinations.length, '◎'],
           ['Merch items', data.merch.length, '✦'],
           ['Nav links', data.navbar.links.length, '≡'],
+          ['Bookings', data.bookingCount ?? '—', '◉'],
         ].map(([label, count, icon]) => (
           <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
             <span style={{ color:'#2e2e42', fontFamily:"'DM Mono',monospace", fontSize:10, display:'flex', alignItems:'center', gap:6 }}>
@@ -1334,6 +1330,173 @@ function FooterEditor({ data, onChange }) {
   )
 }
 
+// ─── BOOKINGS EDITOR ─────────────────────────────────────────────────────────
+
+function BookingsEditor({ onCount }) {
+  const [bookings, setBookings] = useState([])
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState('bookings')
+  const [search, setSearch] = useState('')
+
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`${SCRIPT_URL}?type=bookings&t=${Date.now()}`).then(r=>r.json()).catch(()=>({ data:[] })),
+      fetch(`${SCRIPT_URL}?type=orders&t=${Date.now()}`).then(r=>r.json()).catch(()=>({ data:[] })),
+    ]).then(([bRes, oRes]) => {
+      const b = Array.isArray(bRes.data) ? bRes.data.reverse() : []
+      const o = Array.isArray(oRes.data) ? oRes.data.reverse() : []
+      setBookings(b)
+      setOrders(o)
+      onCount && onCount(b.length + o.length)
+    }).finally(() => setLoading(false))
+  }, [])
+
+  const rows = tab === 'bookings' ? bookings : orders
+  const filtered = search
+    ? rows.filter(r => JSON.stringify(r).toLowerCase().includes(search.toLowerCase()))
+    : rows
+
+  const cols = tab === 'bookings'
+    ? ['timestamp','destination','name','phone','email','date','travellers','budget','message']
+    : ['timestamp','product','category','price','name','phone','email','size','sleeve','height','age','note']
+
+  const fmt = (v) => {
+    if (!v) return <span style={{ color:'#2a2a38' }}>—</span>
+    if (typeof v === 'string' && v.match(/^\d{4}-\d{2}-\d{2}T/)) {
+      return new Date(v).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+    }
+    return v
+  }
+
+  const tabBtn = (key, label, count) => (
+    <button onClick={()=>setTab(key)} style={{
+      background: tab===key ? 'rgba(201,168,76,.12)' : 'transparent',
+      border: `1px solid ${tab===key ? 'rgba(201,168,76,.4)' : 'rgba(255,255,255,.06)'}`,
+      color: tab===key ? '#c9a84c' : '#444',
+      padding:'7px 18px', borderRadius:6, cursor:'pointer',
+      fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.14em',
+      display:'flex', alignItems:'center', gap:8, transition:'all .15s',
+    }}>
+      {label}
+      <span style={{
+        background: tab===key ? 'rgba(201,168,76,.2)' : 'rgba(255,255,255,.05)',
+        color: tab===key ? '#c9a84c' : '#333',
+        padding:'1px 7px', borderRadius:3, fontSize:9,
+      }}>{count}</span>
+    </button>
+  )
+
+  return (
+    <div>
+      <div style={{ marginBottom:28 }}>
+        <p style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.22em', color:'#c9a84c', textTransform:'uppercase', margin:'0 0 8px', opacity:0.7 }}>Live data</p>
+        <h2 style={{ fontFamily:"'DM Serif Display',serif", fontSize:26, fontWeight:400, color:'#e8e0d0', margin:'0 0 6px', letterSpacing:'-0.02em' }}>Bookings & Orders</h2>
+        <p style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.1em', color:'#3a3a50', margin:'0 0 20px', lineHeight:1.7 }}>
+          Every trip enquiry and merch order submitted through the site lands here in real time.<br />
+          Use this to follow up with leads, track demand, and close bookings.
+        </p>
+        <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
+          {[
+            { label:'Trip enquiries arrive when someone fills the booking form on a destination', icon:'◎' },
+            { label:'Merch orders come in when someone submits their fit details on a product', icon:'✦' },
+            { label:'Both also trigger an email to you via Formspree the moment they submit', icon:'✉' },
+          ].map((tip, i) => (
+            <div key={i} style={{
+              display:'flex', alignItems:'flex-start', gap:10,
+              background:'rgba(201,168,76,.04)', border:'1px solid rgba(201,168,76,.1)',
+              borderRadius:8, padding:'10px 14px', flex:'1 1 220px',
+            }}>
+              <span style={{ color:'#c9a84c', fontSize:13, flexShrink:0, marginTop:1 }}>{tip.icon}</span>
+              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, color:'#555', letterSpacing:'0.04em', lineHeight:1.6 }}>{tip.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display:'flex', gap:8, marginBottom:20 }}>
+        {tabBtn('bookings', 'Trip Enquiries', bookings.length)}
+        {tabBtn('orders', 'Merch Orders', orders.length)}
+      </div>
+
+      {/* Search */}
+      <div style={{ marginBottom:16, position:'relative' }}>
+        <input
+          value={search} onChange={e=>setSearch(e.target.value)}
+          placeholder="Search…"
+          style={{
+            width:'100%', background:'#090910', border:'1px solid #1a1a28',
+            borderRadius:7, color:'#d8d0c8', fontFamily:"'DM Mono',monospace",
+            fontSize:12, padding:'9px 12px 9px 34px', boxSizing:'border-box', outline:'none',
+            transition:'border-color .18s',
+          }}
+          onFocus={e=>e.target.style.borderColor='#c9a84c'}
+          onBlur={e=>e.target.style.borderColor='#1a1a28'}
+        />
+        <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#3a3a50', fontSize:12 }}>⌕</span>
+      </div>
+
+      {loading ? (
+        <div style={{ display:'flex', alignItems:'center', gap:10, padding:'40px 0', justifyContent:'center' }}>
+          <div style={{ width:16, height:16, border:'1.5px solid rgba(201,168,76,.15)', borderTop:'1.5px solid #c9a84c', borderRadius:'50%', animation:'spin .7s linear infinite' }} />
+          <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, color:'#3a3a50', letterSpacing:'0.16em' }}>Loading submissions…</span>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign:'center', padding:'48px 0', color:'#2a2a38', fontFamily:"'DM Mono',monospace", fontSize:11, letterSpacing:'0.14em' }}>
+          {search ? 'No results found' : `No ${tab === 'bookings' ? 'bookings' : 'orders'} yet`}
+        </div>
+      ) : (
+        <div style={{ overflowX:'auto' }}>
+          <table style={{ width:'100%', borderCollapse:'collapse', fontFamily:"'DM Mono',monospace", fontSize:11 }}>
+            <thead>
+              <tr>
+                {cols.map(col => (
+                  <th key={col} style={{
+                    padding:'8px 12px', textAlign:'left',
+                    borderBottom:'1px solid rgba(255,255,255,.06)',
+                    color:'#3a3a50', fontSize:9, letterSpacing:'0.18em',
+                    textTransform:'uppercase', whiteSpace:'nowrap', fontWeight:500,
+                  }}>{col}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((row, i) => (
+                <tr key={i} style={{
+                  borderBottom:'1px solid rgba(255,255,255,.03)',
+                  background: i%2===0 ? 'transparent' : 'rgba(255,255,255,.01)',
+                  transition:'background .15s',
+                }}
+                  onMouseEnter={e=>e.currentTarget.style.background='rgba(201,168,76,.04)'}
+                  onMouseLeave={e=>e.currentTarget.style.background=i%2===0?'transparent':'rgba(255,255,255,.01)'}
+                >
+                  {cols.map(col => (
+                    <td key={col} style={{
+                      padding:'10px 12px', color:'#c8c0b8', verticalAlign:'top',
+                      maxWidth: col==='message'||col==='note' ? 200 : col==='email' ? 160 : 'none',
+                      whiteSpace: col==='message'||col==='note' ? 'normal' : 'nowrap',
+                      overflow:'hidden', textOverflow:'ellipsis',
+                    }}>
+                      {col==='destination'||col==='product'
+                        ? <span style={{ color:'#c9a84c', fontWeight:500 }}>{fmt(row[col])}</span>
+                        : fmt(row[col])
+                      }
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
 // ─── PREVIEW PANEL ────────────────────────────────────────────────────────────
 
 function PreviewPanel({ active, data }) {
@@ -1609,9 +1772,10 @@ function AdminPage() {
           {active==='about' && <AboutEditor data={data.about} onChange={upd('about')} />}
           {active==='navbar' && <NavbarEditor data={data.navbar} onChange={upd('navbar')} />}
           {active==='footer' && <FooterEditor data={data.footer} onChange={upd('footer')} />}
+          {active==='bookings' && <BookingsEditor onCount={c => setData(prev => ({...prev, bookingCount: c}))} />}
         </div>
 
-        <PreviewPanel active={active} data={data} />
+        {active !== 'bookings' && <PreviewPanel active={active} data={data} />}
       </div>
 
       {/* LOADING OVERLAY */}

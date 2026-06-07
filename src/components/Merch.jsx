@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
+const FORMSPREE_URL = 'https://formspree.io/f/xqeopbeb'
 
 
 const categories = ['All', 'Clothing', 'Travel Gear']
@@ -9,7 +10,9 @@ const categories = ['All', 'Clothing', 'Travel Gear']
 function MerchModal({ item, onClose }) {
   const [activeImg, setActiveImg] = useState(0)
   const [submitted, setSubmitted] = useState(false)
-  const [form, setForm] = useState({ sleeve: '', size: '', height: '', age: '', note: '' })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [form, setForm] = useState({ name: '', phone: '', email: '', sleeve: '', size: '', height: '', age: '', note: '' })
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -18,9 +21,41 @@ function MerchModal({ item, onClose }) {
 
   const handleBackdrop = (e) => { if (e.target === e.currentTarget) onClose() }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setSubmitted(true)
+    setLoading(true)
+    setError('')
+    const payload = {
+      type: 'merch_order',
+      product: item.name,
+      price: item.price,
+      category: item.category,
+      ...form,
+      timestamp: new Date().toISOString(),
+    }
+    try {
+      // Send to Google Sheet
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      // Email notification via Formspree (best-effort — don't block success on it)
+      fetch(FORMSPREE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          subject: `New Merch Order — ${item.name}`,
+          ...payload,
+        }),
+      }).catch(() => {})
+      setSubmitted(true)
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const has = (f) => item.fields.includes(f)
@@ -60,6 +95,18 @@ function MerchModal({ item, onClose }) {
 
             {!submitted ? (
               <form className="m-form" onSubmit={handleSubmit}>
+                <div className="m-field">
+                  <label>Full Name <span className="opt">*</span></label>
+                  <input type="text" required placeholder="Your name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                </div>
+                <div className="m-field">
+                  <label>Phone Number <span className="opt">*</span></label>
+                  <input type="tel" required placeholder="+234 800 000 0000" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                </div>
+                <div className="m-field">
+                  <label>Email <span className="opt">(optional)</span></label>
+                  <input type="email" placeholder="you@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+                </div>
                 <p className="m-form-label">Tailor your fit <span>(all optional)</span></p>
 
                 {has('sleeve') && (
@@ -136,7 +183,10 @@ function MerchModal({ item, onClose }) {
                   </div>
                 )}
 
-                <button type="submit" className="m-submit">Submit Order Interest</button>
+                {error && <p style={{ color:'#e57373', fontSize:'0.78rem', margin:'0 0 0.5rem' }}>{error}</p>}
+                <button type="submit" className="m-submit" disabled={loading}>
+                  {loading ? 'Sending…' : 'Submit Order Interest'}
+                </button>
               </form>
             ) : (
               <div className="m-success">

@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymZhP0z99_-8kmI_nIKix3CHPs6rKsUoLqaa67u8NjfoN7wJq-yyQMe1Gso1eroVPMbw/exec'
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
+const FORMSPREE_URL = 'https://formspree.io/f/xqeopbeb'
 
 const FALLBACK_PLACES = [
   {
@@ -142,25 +143,36 @@ function BookingForm({ destination, onClose }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
-    name: '', email: '', date: '', travellers: '1', budget: '', message: ''
+    name: '', phone: '', email: '', date: '', travellers: '1', budget: '', message: ''
   })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+    const payload = {
+      type: 'booking',
+      destination: destination.title,
+      ...form,
+      timestamp: new Date().toISOString(),
+    }
     try {
-      await fetch(SCRIPT_URL, {
+      fetch(SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          destination: destination.title,
-          ...form,
-        }),
+        body: JSON.stringify(payload),
       })
+      fetch(FORMSPREE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          subject: `New Booking Enquiry — ${destination.title}`,
+          ...payload,
+        }),
+      }).catch(() => {})
       setSubmitted(true)
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
@@ -184,7 +196,7 @@ function BookingForm({ destination, onClose }) {
 
       <div className="field-row">
         <div className="field">
-          <label>Full Name</label>
+          <label>Full Name *</label>
           <input
             type="text"
             placeholder="Your name"
@@ -194,15 +206,24 @@ function BookingForm({ destination, onClose }) {
           />
         </div>
         <div className="field">
-          <label>Email</label>
+          <label>Phone Number *</label>
           <input
-            type="email"
-            placeholder="you@email.com"
-            value={form.email}
-            onChange={e => setForm({ ...form, email: e.target.value })}
+            type="tel"
+            placeholder="+234 800 000 0000"
+            value={form.phone}
+            onChange={e => setForm({ ...form, phone: e.target.value })}
             required
           />
         </div>
+      </div>
+      <div className="field">
+        <label>Email <span style={{opacity:0.5, fontSize:'0.75em'}}>(optional)</span></label>
+        <input
+          type="email"
+          placeholder="you@email.com"
+          value={form.email}
+          onChange={e => setForm({ ...form, email: e.target.value })}
+        />
       </div>
 
       <div className="field-row">
@@ -1021,6 +1042,95 @@ export default function Destinations() {
           background: #c9a84c;
           color: #080808;
         }
+        /* ── RESPONSIVE ── */
+
+        @media (max-width: 860px) {
+          .destinations {
+            padding: 80px 5vw;
+          }
+
+          .card {
+            min-width: 300px;
+            max-width: 300px;
+          }
+
+          .media { height: 220px; }
+        }
+
+        @media (max-width: 600px) {
+          .destinations {
+            padding: 64px 5vw 48px;
+          }
+
+          .destinations__header h2 {
+            font-size: 2.2rem;
+          }
+
+          .card {
+            min-width: 78vw;
+            max-width: 78vw;
+          }
+
+          .media { height: 200px; }
+
+          /* Modal — slide up from bottom, full width */
+          .modal-backdrop {
+            padding: 0;
+            align-items: flex-end;
+          }
+
+          .modal {
+            width: 100vw;
+            height: 92vh;
+            max-width: 100vw;
+            border-left: none;
+            border-right: none;
+            border-bottom: none;
+            border-radius: 0;
+          }
+
+          /* Stack columns vertically */
+          .modal-body {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr;
+            height: 100%;
+            overflow-y: auto;
+          }
+
+          .modal-info {
+            padding: 2rem 1.4rem 1.4rem;
+            border-right: none;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            justify-content: flex-start;
+          }
+
+          .modal-title { font-size: 2rem; }
+
+          .modal-tagline { margin-bottom: 1.2rem; }
+
+          .modal-meta { gap: 1.2rem; margin-bottom: 1.2rem; }
+
+          .modal-highlights ul {
+            grid-template-columns: 1fr;
+          }
+
+          .modal-form-col {
+            padding: 1.4rem 1.4rem 2rem;
+            justify-content: flex-start;
+            overflow-y: visible;
+          }
+
+          /* Single-column form fields on mobile */
+          .field-row {
+            grid-template-columns: 1fr;
+          }
+
+          .modal-close {
+            top: 0.75rem;
+            right: 0.75rem;
+          }
+        }
+
         /* SCROLL DOTS */
         .dest__dots {
           display: flex;
