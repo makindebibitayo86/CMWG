@@ -370,11 +370,7 @@ export default function Destinations() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  useEffect(() => {
-    if (!isMobile) return
-    const t = setTimeout(() => setShowSwipeHint(false), 3000)
-    return () => clearTimeout(t)
-  }, [isMobile])
+
 
   useEffect(() => {
     fetch(`${SCRIPT_URL}?action=getDestinations`)
@@ -1122,18 +1118,20 @@ export default function Destinations() {
           }
 
           .modal-info {
-            padding: 2rem 1.4rem 1.4rem;
+            padding: 2.5rem 1.6rem 2rem;
             border-right: none;
             border-bottom: 1px solid rgba(255,255,255,0.08);
             justify-content: flex-start;
+            min-height: 52vh;
           }
 
-          .modal-title { font-size: 2rem; }
-          .modal-tagline { margin-bottom: 1.2rem; }
-          .modal-meta { gap: 1.2rem; margin-bottom: 1.2rem; }
+          .modal-title { font-size: 2.2rem; }
+          .modal-tagline { font-size: 0.95rem; margin-bottom: 1.6rem; line-height: 1.6; }
+          .modal-meta { gap: 1.6rem; margin-bottom: 1.6rem; }
+          .meta-value { font-size: 1rem; }
 
           .modal-highlights ul {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 1fr;
           }
 
           .modal-form-col {

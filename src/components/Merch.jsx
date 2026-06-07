@@ -219,12 +219,7 @@ export default function Merch() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Auto-dismiss hint after 3s
-  useEffect(() => {
-    if (!isMobile) return
-    const t = setTimeout(() => setShowSwipeHint(false), 3000)
-    return () => clearTimeout(t)
-  }, [isMobile])
+
 
   useEffect(() => {
     fetch(`${SCRIPT_URL}?type=merch`)
@@ -379,7 +374,7 @@ export default function Merch() {
 
       <div className="merch__bottom">
         <p>Want a custom order or bulk gear for your group trip?</p>
-        <a href="#plan" className="merch__contact">Get in Touch</a>
+        <a href="https://wa.me/2348160786498?text=Hi%2C%20I%27d%20like%20to%20enquire%20about%20a%20custom%20or%20bulk%20merch%20order." className="merch__contact" target="_blank" rel="noopener noreferrer">Get in Touch</a>
       </div>
 
       {openItem && <MerchModal item={openItem} onClose={() => setOpenItem(null)} />}
@@ -704,6 +699,7 @@ export default function Merch() {
           height: 72px;
           overflow-x: auto;
           scrollbar-width: none;
+          justify-content: center;
         }
 
         .m-thumbs::-webkit-scrollbar { display: none; }
@@ -1010,7 +1006,7 @@ export default function Merch() {
             height: auto;
           }
           .m-main-img {
-            height: 220px;
+            height: 320px;
             flex: none;
           }
           .m-right {

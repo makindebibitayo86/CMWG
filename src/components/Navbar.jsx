@@ -111,7 +111,7 @@ function Navbar() {
 
         {/* CTA */}
         <div className="navbar__right">
-          <a href="#plan" className="navbar__cta">
+          <a href="#destinations" className="navbar__cta">
             Start Planning
           </a>
 
@@ -169,7 +169,7 @@ function Navbar() {
               ))}
 
               <motion.a
-                href="#plan"
+                href="#destinations"
                 onClick={() => setMenuOpen(false)}
                 className="drawer__cta"
                 variants={linkVariants(navLinks.length)}
