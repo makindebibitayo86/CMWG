@@ -5,6 +5,7 @@ const navLinks = [
   { label: 'Destinations', href: '#destinations' },
   { label: 'Hotels', href: '/booking' },
   { label: 'Merch', href: '#shop' },
+  { label: 'Experiences', href: '#experiences' },
   { label: 'About', href: '#about' },
 ]
 
@@ -43,6 +44,12 @@ function Navbar() {
     const matched = pageLinks.find(l => window.location.pathname === l.href)
     if (matched) {
       setActiveHref(matched.href)
+      return
+    }
+
+    // Treat /experiences page as #experiences being active
+    if (window.location.pathname === '/experiences') {
+      setActiveHref('#experiences')
       return
     }
 
@@ -468,7 +475,6 @@ function Navbar() {
           min-width: 44px;
           min-height: 44px;
           outline: none;
-          /* touch-action: manipulation removes 300ms delay */
           touch-action: manipulation;
         }
         .navbar__hamburger:focus-visible {
