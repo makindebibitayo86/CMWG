@@ -259,7 +259,8 @@ function deepClone(obj) { return JSON.parse(JSON.stringify(obj)) }
 function Toast({ msg, ok }) {
   return (
     <div style={{
-      position:'fixed', bottom:28, right:28, zIndex:9999,
+      position:'fixed', bottom:'calc(28px + env(safe-area-inset-bottom))', right:16, left:16, zIndex:9999,
+      maxWidth:360, margin:'0 auto',
       display:'flex', alignItems:'center', gap:10,
       background: ok ? 'rgba(10,18,10,.97)' : 'rgba(18,8,8,.97)',
       border:`1px solid ${ok?'rgba(76,175,80,.4)':'rgba(244,67,54,.4)'}`,
@@ -538,29 +539,37 @@ function Pill({ label }) {
 
 // ─── SECTION BUTTONS ─────────────────────────────────────────────────────────
 
+const ICON_HERO     = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" style={{flexShrink:0}}><path fill="currentColor" d="M5 21V3h14v18zm1-1h12V4H6zm1.73-2.5h8.693l-2.757-3.654l-2.454 3.077l-1.589-1.884zM6 20V4z" /></svg>
+const ICON_ABOUT    = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16" style={{flexShrink:0}}><path fill="currentColor" fillRule="evenodd" d="M256 42.667C138.18 42.667 42.667 138.179 42.667 256c0 117.82 95.513 213.334 213.333 213.334c117.822 0 213.334-95.513 213.334-213.334S373.822 42.667 256 42.667m0 384c-94.105 0-170.666-76.561-170.666-170.667S161.894 85.334 256 85.334c94.107 0 170.667 76.56 170.667 170.666S350.107 426.667 256 426.667m26.714-256c0 15.468-11.262 26.667-26.497 26.667c-15.851 0-26.837-11.2-26.837-26.963c0-15.15 11.283-26.37 26.837-26.37c15.235 0 26.497 11.22 26.497 26.666m-48 64h42.666v128h-42.666z" /></svg>
+const ICON_NAVBAR   = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" style={{flexShrink:0}}><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm0 3h16" /></svg>
+const ICON_FOOTER   = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" style={{flexShrink:0}}><path fill="currentColor" d="M19.5 20h-15q-.213 0-.357-.143T4 19.5t.143-.357T4.5 19h15q.214 0 .357.143T20 19.5t-.143.357T19.5 20M5.616 16.616q-.691 0-1.153-.463T4 15V5.616q0-.691.463-1.153T5.616 4h12.769q.69 0 1.153.463T20 5.616V15q0 .69-.462 1.153t-1.153.463zm0-1h12.769q.269 0 .442-.174Q19 15.27 19 15V5.616q0-.27-.173-.443T18.385 5H5.615q-.269 0-.442.173T5 5.616V15q0 .27.173.442q.173.173.443.173m-.616 0V5z" /></svg>
+const ICON_DEST     = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" width="16" height="16" style={{flexShrink:0}}><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" d="M2.5.5v13m0-13l9 4.5l-9 4.5" /></svg>
+const ICON_SHOP     = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" style={{flexShrink:0}}><path fill="currentColor" fillRule="evenodd" d="M8 7V6a4 4 0 1 1 8 0v1h3c.552 0 1 .449 1 1.007v12.001c0 1.1-.895 1.992-1.994 1.992H5.994A1.994 1.994 0 0 1 4 20.008v-12C4 7.45 4.445 7 5 7zm1.2 0h5.6V6a2.8 2.8 0 0 0-5.6 0zM8 8.2H5.2v11.808c0 .436.356.792.794.792h12.012a.794.794 0 0 0 .794-.792V8.2H16V11h-1.2V8.2H9.2V11H8z" /></svg>
+const ICON_BOOKINGS = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" style={{flexShrink:0}}><path fill="none" stroke="currentColor" d="M7.5 6V1m10 5V1m4 16v4.5h-18v-3m17.863-10H3.352M.5 18.25v.25h17.9l.15-.25l.234-.491A28 28 0 0 0 21.5 5.729V3.5h-18v2.128A28 28 0 0 1 .743 17.744z" /></svg>
+
 const NAV_SECTIONS = [
-  { key:'hero', label:'Hero', icon:'◈', desc:'Landing section' },
-  { key:'destinations', label:'Destinations', icon:'◎', desc:'Trip listings' },
-  { key:'merch', label:'Shop', icon:'✦', desc:'Merch catalog' },
-  { key:'about', label:'About', icon:'❧', desc:'Brand story' },
-  { key:'navbar', label:'Navbar', icon:'≡', desc:'Navigation' },
-  { key:'footer', label:'Footer', icon:'⌘', desc:'Footer links' },
+  { key:'hero',         label:'Hero',         icon:ICON_HERO,     desc:'Landing section' },
+  { key:'destinations', label:'Destinations', icon:ICON_DEST,     desc:'Trip listings' },
+  { key:'merch',        label:'Shop',         icon:ICON_SHOP,     desc:'Merch catalog' },
+  { key:'about',        label:'About',        icon:ICON_ABOUT,    desc:'Brand story' },
+  { key:'navbar',       label:'Navbar',       icon:ICON_NAVBAR,   desc:'Navigation' },
+  { key:'footer',       label:'Footer',       icon:ICON_FOOTER,   desc:'Footer links' },
 ]
 
 const OPS_SECTIONS = [
-  { key:'destinations', label:'Destinations', icon:'◎', desc:'Trip listings' },
-  { key:'merch', label:'Shop', icon:'✦', desc:'Merch catalog' },
-  { key:'bookings', label:'Bookings', icon:'◉', desc:'Enquiries & orders' },
+  { key:'destinations', label:'Destinations', icon:ICON_DEST,     desc:'Trip listings' },
+  { key:'merch',        label:'Shop',         icon:ICON_SHOP,     desc:'Merch catalog' },
+  { key:'bookings',     label:'Bookings',     icon:ICON_BOOKINGS, desc:'Enquiries & orders' },
 ]
 
 const CONFIG_SECTIONS = [
-  { key:'hero', label:'Hero', icon:'◈', desc:'Landing section' },
-  { key:'about', label:'About', icon:'❧', desc:'Brand story' },
-  { key:'navbar', label:'Navbar', icon:'≡', desc:'Navigation' },
-  { key:'footer', label:'Footer', icon:'⌘', desc:'Footer links' },
+  { key:'hero',   label:'Hero',   icon:ICON_HERO,   desc:'Landing section' },
+  { key:'about',  label:'About',  icon:ICON_ABOUT,  desc:'Brand story' },
+  { key:'navbar', label:'Navbar', icon:ICON_NAVBAR, desc:'Navigation' },
+  { key:'footer', label:'Footer', icon:ICON_FOOTER, desc:'Footer links' },
 ]
 
-function SideNav({ active, onSelect, data, open, onToggle, isMobile, activeUser, onLogout }) {
+function SideNav({ active, onSelect, data, open, onToggle, isMobile, isTablet, isDesktop, activeUser, onLogout }) {
   const [configOpen, setConfigOpen] = useState(false)
 
   const NavBtn = ({ s }) => {
@@ -569,16 +578,16 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, activeUser,
       <button
         key={s.key}
         onClick={() => { onSelect(s.key); if (isMobile) onToggle() }}
-        title={!open ? s.label : undefined}
+        title={!effectiveOpen ? s.label : undefined}
         style={{
-          display:'flex', alignItems:'center', gap: open ? 12 : 0,
-          width:'100%', padding: open ? '9px 10px' : '11px 0',
-          justifyContent: open ? 'flex-start' : 'center',
+          display:'flex', alignItems:'center', gap: effectiveOpen ? 12 : 0,
+          width:'100%', padding: effectiveOpen ? '9px 10px' : '11px 0',
+          justifyContent: effectiveOpen ? 'flex-start' : 'center',
           marginBottom:2,
           background: isActive ? 'linear-gradient(90deg,rgba(201,168,76,.1),rgba(201,168,76,.03))' : 'transparent',
           border:'none',
-          borderLeft: open ? `2px solid ${isActive?'#c9a84c':'transparent'}` : 'none',
-          borderRadius: open ? '0 7px 7px 0' : 8,
+          borderLeft: effectiveOpen ? `2px solid ${isActive?'#c9a84c':'transparent'}` : 'none',
+          borderRadius: effectiveOpen ? '0 7px 7px 0' : 8,
           color: isActive ? '#c9a84c' : '#444',
           cursor:'pointer',
           textAlign:'left',
@@ -588,8 +597,8 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, activeUser,
         onMouseEnter={e=>{ if(!isActive){ e.currentTarget.style.background='rgba(255,255,255,.04)'; e.currentTarget.style.color='#777' } }}
         onMouseLeave={e=>{ if(!isActive){ e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#444' } }}
       >
-        <span style={{ fontSize:15, width:20, textAlign:'center', flexShrink:0 }}>{s.icon}</span>
-        {open && (
+        <span style={{ width:20, textAlign:'center', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>{s.icon}</span>
+        {effectiveOpen && (
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ fontFamily:"'DM Sans',sans-serif", fontSize:12, fontWeight:isActive?600:400, letterSpacing:'0.01em', lineHeight:1.2 }}>{s.label}</div>
             <div style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.1em', color:isActive?'rgba(201,168,76,.5)':'#2a2a3a', marginTop:1 }}>{s.desc}</div>
@@ -599,7 +608,11 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, activeUser,
     )
   }
 
-  const sidebarWidth = open ? 220 : 52
+  // Tablet: always icon-only (collapsed), not toggleable from sidebar
+  // Mobile: full drawer from hamburger
+  // Desktop: toggleable expand/collapse
+  const effectiveOpen = isDesktop ? open : (isTablet ? false : open)
+  const sidebarWidth = effectiveOpen ? 220 : 52
 
   return (
     <>
@@ -621,7 +634,6 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, activeUser,
         display:'flex', flexDirection:'column',
         transition: isMobile ? 'none' : 'width .22s cubic-bezier(.4,0,.2,1)',
         overflow: isMobile ? 'visible' : 'hidden',
-        position: isMobile ? 'relative' : 'relative',
         // On mobile: fixed drawer that slides in from left
         ...(isMobile ? {
           position:'fixed', top:0, left:0, bottom:0, zIndex:150,
@@ -632,46 +644,46 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, activeUser,
         } : {}),
       }}>
         <div style={{
-          width: isMobile ? 260 : (open ? 220 : 52),
+          width: isMobile ? 260 : (effectiveOpen ? 220 : 52),
           display:'flex', flexDirection:'column', height:'100%',
           overflow:'hidden',
         }}>
-          {/* Logo area — click to collapse/expand */}
+          {/* Logo area — click to collapse/expand (desktop only) */}
           <button
-            onClick={onToggle}
-            title={open ? 'Collapse sidebar' : 'Expand sidebar'}
+            onClick={isDesktop ? onToggle : undefined}
+            title={isDesktop ? (effectiveOpen ? 'Collapse sidebar' : 'Expand sidebar') : undefined}
             style={{
-              padding: open ? '20px 18px 16px' : '16px 0',
+              padding: effectiveOpen ? '20px 18px 16px' : '16px 0',
               borderBottom:'1px solid rgba(255,255,255,.04)',
               display:'flex', alignItems:'center',
-              justifyContent: open ? 'flex-start' : 'center',
+              justifyContent: effectiveOpen ? 'flex-start' : 'center',
               flexShrink:0, width:'100%',
               background:'transparent', border:'none', borderBottom:'1px solid rgba(255,255,255,.04)',
-              cursor:'pointer', textAlign:'left',
+              cursor: isDesktop ? 'pointer' : 'default', textAlign:'left',
               transition:'background .15s',
             }}
-            onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,.02)'}
+            onMouseEnter={e => { if (isDesktop) e.currentTarget.style.background='rgba(255,255,255,.02)' }}
             onMouseLeave={e => e.currentTarget.style.background='transparent'}
           >
-            {open
+            {effectiveOpen
               ? <>
                   <div style={{ flex:1 }}>
                     <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:34, display:'block' }} />
                     <p style={{ color:'#2a2a40', fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.22em', textTransform:'uppercase', margin:'10px 0 0' }}>Content Admin</p>
                   </div>
-                  <span style={{ color:'#2a2a40', fontSize:12, fontFamily:"'DM Mono',monospace", marginLeft:8 }}>‹</span>
+                  {isDesktop && <span style={{ color:'#2a2a40', fontSize:12, fontFamily:"'DM Mono',monospace", marginLeft:8 }}>‹</span>}
                 </>
               : <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:22, width:22, objectFit:'contain', opacity:0.5 }} />
             }
           </button>
 
           {/* Nav items */}
-          <div style={{ flex:1, padding: open ? '12px 10px' : '12px 6px', overflowY:'auto' }}>
-            {open && <p style={{ color:'#c9a84c', fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.25em', textTransform:'uppercase', padding:'4px 8px 10px', opacity:0.6 }}>Operations</p>}
-            {!open && <div style={{ height:8 }} />}
+          <div style={{ flex:1, padding: effectiveOpen ? '12px 10px' : '12px 6px', overflowY:'auto' }}>
+            {effectiveOpen && <p style={{ color:'#c9a84c', fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.25em', textTransform:'uppercase', padding:'4px 8px 10px', opacity:0.6 }}>Operations</p>}
+            {!effectiveOpen && <div style={{ height:8 }} />}
             {OPS_SECTIONS.map(s => <NavBtn key={s.key} s={s} />)}
 
-            {open ? (
+            {effectiveOpen ? (
               <div style={{ marginTop:16 }}>
                 <button
                   onClick={() => setConfigOpen(o => !o)}
@@ -692,8 +704,8 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, activeUser,
             )}
           </div>
 
-          {/* Stats — only when expanded */}
-          {open && (
+          {/* Stats — only when expanded on desktop */}
+          {effectiveOpen && isDesktop && (
             <div style={{ padding:'14px 18px 20px', borderTop:'1px solid rgba(255,255,255,.04)', flexShrink:0 }}>
               <p style={{ color:'#252535', fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.25em', textTransform:'uppercase', marginBottom:12 }}>Quick stats</p>
               {[
@@ -713,14 +725,14 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, activeUser,
           )}
 
           {/* Logout */}
-          <div style={{ padding: open ? '10px 12px' : '10px 6px', borderTop:'1px solid rgba(255,255,255,.04)', flexShrink:0 }}>
+          <div style={{ padding: effectiveOpen ? '10px 12px' : '10px 6px', borderTop:'1px solid rgba(255,255,255,.04)', flexShrink:0 }}>
             <button
               onClick={onLogout}
               title="Log out"
               style={{
-                display:'flex', alignItems:'center', gap: open ? 10 : 0,
-                justifyContent: open ? 'flex-start' : 'center',
-                width:'100%', padding: open ? '8px 10px' : '8px 0',
+                display:'flex', alignItems:'center', gap: effectiveOpen ? 10 : 0,
+                justifyContent: effectiveOpen ? 'flex-start' : 'center',
+                width:'100%', padding: effectiveOpen ? '8px 10px' : '8px 0',
                 background:'transparent', border:'1px solid rgba(200,60,60,.12)',
                 borderRadius:7, cursor:'pointer', color:'#5a2a2a',
                 transition:'all .15s',
@@ -731,7 +743,7 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, activeUser,
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
               </svg>
-              {open && (
+              {effectiveOpen && (
                 <div style={{ textAlign:'left' }}>
                   <div style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.12em', textTransform:'uppercase', lineHeight:1.2 }}>Log out</div>
                   <div style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.08em', color:'#3a2a2a', marginTop:2, textTransform:'none' }}>{activeUser}</div>
@@ -753,7 +765,7 @@ const S = {
   sectionTitle: {
     color:'#e8e0d0',
     fontFamily:"'DM Serif Display',serif",
-    fontSize:26, fontWeight:400,
+    fontSize:'clamp(20px, 4vw, 26px)', fontWeight:400,
     margin:'0 0 6px',
     letterSpacing:'-0.02em',
     lineHeight:1.1,
@@ -773,8 +785,8 @@ const S = {
     margin:'24px 0 12px',
     display:'flex', alignItems:'center', gap:8,
   },
-  grid2: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 18px' },
-  grid3: { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'0 16px' },
+  grid2: { display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:'0 18px' },
+  grid3: { display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(180px, 1fr))', gap:'0 16px' },
   card: {
     background:'rgba(255,255,255,.02)',
     border:'1px solid rgba(255,255,255,.05)',
@@ -893,15 +905,16 @@ function EditModal({ title, onClose, children }) {
       background:'rgba(0,0,0,.75)',
       backdropFilter:'blur(6px)',
       display:'flex', alignItems:'center', justifyContent:'center',
-      padding:'24px',
+      padding: window.innerWidth < 640 ? '0' : '24px',
       animation:'fadeIn .2s ease',
     }}>
       <div style={{
         width:'100%', maxWidth:680,
-        maxHeight:'90vh',
+        maxHeight: window.innerWidth < 640 ? '100dvh' : '90vh',
+        height: window.innerWidth < 640 ? '100dvh' : 'auto',
         background:'linear-gradient(145deg,#0c0c14,#080810)',
         border:'1px solid rgba(201,168,76,.2)',
-        borderRadius:14,
+        borderRadius: window.innerWidth < 640 ? 0 : 14,
         display:'flex', flexDirection:'column',
         boxShadow:'0 40px 100px rgba(0,0,0,.8), 0 0 0 1px rgba(201,168,76,.05)',
         overflow:'hidden',
@@ -948,6 +961,86 @@ function EditModal({ title, onClose, children }) {
             boxShadow:'0 4px 16px rgba(201,168,76,.3)',
           }}>Done</button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── DEST ROW ─────────────────────────────────────────────────────────────────
+
+function DestRow({ dest, idx, onEdit, onDelete }) {
+  const [vw, setVw] = useState(window.innerWidth)
+  useEffect(() => {
+    const h = () => setVw(window.innerWidth)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  const isMob = vw < 640
+
+  return (
+    <div style={{
+      ...S.card,
+      display:'flex', alignItems:'center',
+      gap: isMob ? 10 : 14,
+      minWidth:0, overflow:'hidden',
+      transition:'all .15s',
+    }}>
+      {/* Index — hidden on mobile to save space */}
+      {!isMob && (
+        <span style={{ color:'#2a2a38', fontFamily:"'DM Mono',monospace", fontSize:11, width:20, textAlign:'center', flexShrink:0 }}>{idx+1}</span>
+      )}
+
+      {/* Thumbnail */}
+      {dest.img
+        ? <img src={dest.img} alt="" style={{ width: isMob ? 44 : 72, height: isMob ? 44 : 48, objectFit:'cover', borderRadius: isMob ? 5 : 6, flexShrink:0 }} onError={e=>e.target.style.display='none'} />
+        : <div style={{ width: isMob ? 44 : 72, height: isMob ? 44 : 48, borderRadius: isMob ? 5 : 6, background:'rgba(255,255,255,.03)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <span style={{ color:'#2a2a38', fontSize: isMob ? 14 : 18 }}>◎</span>
+          </div>
+      }
+
+      {/* Title + desc — flex:1 minWidth:0 ensures it shrinks and clips, never wraps */}
+      <div style={{ flex:1, minWidth:0, overflow:'hidden' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6, overflow:'hidden' }}>
+          <p style={{
+            color:'#e8e0d0', fontSize: isMob ? 12 : 13, fontWeight:500, margin:0,
+            fontFamily:"'DM Sans',sans-serif",
+            whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+            minWidth:0,
+          }}>{dest.title}</p>
+          {dest.video && !isMob && (
+            <span style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.1em', color:'#c9a84c', background:'rgba(201,168,76,.08)', border:'1px solid rgba(201,168,76,.2)', padding:'2px 6px', borderRadius:3, flexShrink:0 }}>▶</span>
+          )}
+        </div>
+        <p style={{ color:'#3a3a50', fontSize: isMob ? 10 : 11, margin:'3px 0 0', fontFamily:"'DM Mono',monospace", whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{dest.desc}</p>
+      </div>
+
+      {/* Category badge — only on tablet+ */}
+      {vw >= 640 && (
+        <span style={{
+          fontSize:9, letterSpacing:'0.1em', color:'#444',
+          background:'rgba(255,255,255,.03)', border:'1px solid rgba(255,255,255,.06)',
+          padding:'3px 10px', borderRadius:4,
+          fontFamily:"'DM Mono',monospace", flexShrink:0,
+          whiteSpace:'nowrap',
+        }}>{dest.category}</span>
+      )}
+
+      {/* Actions */}
+      <div style={{ display:'flex', gap: isMob ? 4 : 6, flexShrink:0 }}>
+        <button onClick={()=>onEdit(dest)} style={{
+          ...S.editBtn,
+          padding: isMob ? '5px 10px' : '5px 13px',
+          fontSize: isMob ? 10 : 10,
+        }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.15)';e.currentTarget.style.color='#aaa'}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.07)';e.currentTarget.style.color='#666'}}>
+          Edit
+        </button>
+        <button onClick={()=>onDelete(dest.id)} style={S.delBtn}
+          onMouseEnter={e=>{e.currentTarget.style.color='#e57373';e.currentTarget.style.borderColor='rgba(244,67,54,.4)'}}
+          onMouseLeave={e=>{e.currentTarget.style.color='rgba(244,67,54,.5)';e.currentTarget.style.borderColor='rgba(244,67,54,.15)'}}>
+          ✕
+        </button>
       </div>
     </div>
   )
@@ -1014,45 +1107,82 @@ function DestinationsEditor({ data, onChange }) {
 
       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
         {data.map((dest,idx) => (
-          <div key={dest.id} style={{
-            ...S.card,
-            display:'flex', alignItems:'center', gap:14,
-            transition:'all .15s',
-          }}>
-            <span style={{ color:'#2a2a38', fontFamily:"'DM Mono',monospace", fontSize:11, width:20, textAlign:'center', flexShrink:0 }}>{idx+1}</span>
-            {dest.img
-              ? <img src={dest.img} alt="" style={{ width:72, height:48, objectFit:'cover', borderRadius:6, flexShrink:0 }} onError={e=>e.target.style.display='none'} />
-              : <div style={{ width:72, height:48, borderRadius:6, background:'rgba(255,255,255,.03)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <span style={{ color:'#2a2a38', fontSize:18 }}>◎</span>
-                </div>
-            }
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
-                <p style={{ color:'#e8e0d0', fontSize:13, fontWeight:500, margin:0, fontFamily:"'DM Sans',sans-serif" }}>{dest.title}</p>
-                {dest.video && <span style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.1em', color:'#c9a84c', background:'rgba(201,168,76,.08)', border:'1px solid rgba(201,168,76,.2)', padding:'2px 7px', borderRadius:3 }}>▶ video</span>}
-              </div>
-              <p style={{ color:'#3a3a50', fontSize:11, margin:0, fontFamily:"'DM Mono',monospace", whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{dest.desc}</p>
-            </div>
-            <span style={{
-              fontSize:9, letterSpacing:'0.1em', color:'#444',
-              background:'rgba(255,255,255,.03)', border:'1px solid rgba(255,255,255,.06)',
-              padding:'3px 10px', borderRadius:4,
-              fontFamily:"'DM Mono',monospace", flexShrink:0,
-            }}>{dest.category}</span>
-            <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-              <button onClick={()=>openEdit(dest)} style={S.editBtn}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.15)';e.currentTarget.style.color='#aaa'}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.07)';e.currentTarget.style.color='#666'}}>
-                Edit
-              </button>
-              <button onClick={()=>deleteItem(dest.id)} style={S.delBtn}
-                onMouseEnter={e=>{e.currentTarget.style.color='#e57373';e.currentTarget.style.borderColor='rgba(244,67,54,.4)'}}
-                onMouseLeave={e=>{e.currentTarget.style.color='rgba(244,67,54,.5)';e.currentTarget.style.borderColor='rgba(244,67,54,.15)'}}>
-                ✕
-              </button>
-            </div>
-          </div>
+          <DestRow key={dest.id} dest={dest} idx={idx} onEdit={openEdit} onDelete={deleteItem} />
         ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── MERCH ROW ────────────────────────────────────────────────────────────────
+
+function MerchRow({ item, idx, onEdit, onDelete }) {
+  const [vw, setVw] = useState(window.innerWidth)
+  useEffect(() => {
+    const h = () => setVw(window.innerWidth)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  const isMob = vw < 640
+
+  return (
+    <div style={{
+      ...S.card,
+      display:'flex', alignItems:'center',
+      gap: isMob ? 10 : 14,
+      minWidth:0, overflow:'hidden',
+      transition:'all .15s',
+    }}>
+      {/* Index — hidden on mobile */}
+      {!isMob && (
+        <span style={{ color:'#2a2a38', fontFamily:"'DM Mono',monospace", fontSize:11, width:20, textAlign:'center', flexShrink:0 }}>{idx+1}</span>
+      )}
+
+      {/* Thumbnail */}
+      {item.imgs && item.imgs[0]
+        ? <img src={item.imgs[0]} alt="" style={{ width: isMob ? 44 : 52, height: isMob ? 44 : 52, objectFit:'cover', borderRadius: isMob ? 5 : 6, flexShrink:0 }} onError={e=>e.target.style.display='none'} />
+        : <div style={{ width: isMob ? 44 : 52, height: isMob ? 44 : 52, borderRadius: isMob ? 5 : 6, background:'rgba(255,255,255,.03)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <span style={{ color:'#2a2a38', fontSize: isMob ? 13 : 16 }}>✦</span>
+          </div>
+      }
+
+      {/* Name + desc */}
+      <div style={{ flex:1, minWidth:0, overflow:'hidden' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6, overflow:'hidden' }}>
+          <p style={{
+            color:'#e8e0d0', fontSize: isMob ? 12 : 13, fontWeight:500, margin:0,
+            fontFamily:"'DM Sans',sans-serif",
+            whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+            minWidth:0,
+          }}>{item.name}</p>
+          {!isMob && <Pill label={item.tag} />}
+        </div>
+        {!isMob && (
+          <p style={{ color:'#3a3a50', fontSize:11, margin:'3px 0 0', fontFamily:"'DM Mono',monospace", whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.desc}</p>
+        )}
+      </div>
+
+      {/* Price */}
+      <span style={{
+        color:'#c9a84c', fontFamily:"'DM Mono',monospace",
+        fontSize: isMob ? 12 : 13, fontWeight:600, flexShrink:0,
+      }}>{item.price}</span>
+
+      {/* Actions */}
+      <div style={{ display:'flex', gap: isMob ? 4 : 6, flexShrink:0 }}>
+        <button onClick={()=>onEdit(item)} style={{
+          ...S.editBtn,
+          padding: isMob ? '5px 10px' : '5px 13px',
+        }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.15)';e.currentTarget.style.color='#aaa'}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.07)';e.currentTarget.style.color='#666'}}>
+          Edit
+        </button>
+        <button onClick={()=>onDelete(item.id)} style={S.delBtn}
+          onMouseEnter={e=>{e.currentTarget.style.color='#e57373';e.currentTarget.style.borderColor='rgba(244,67,54,.4)'}}
+          onMouseLeave={e=>{e.currentTarget.style.color='rgba(244,67,54,.5)';e.currentTarget.style.borderColor='rgba(244,67,54,.15)'}}>
+          ✕
+        </button>
       </div>
     </div>
   )
@@ -1289,35 +1419,7 @@ function MerchEditor({ data, onChange }) {
 
       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
         {data.map((item,idx) => (
-          <div key={item.id} style={{ ...S.card, display:'flex', alignItems:'center', gap:14 }}>
-            <span style={{ color:'#2a2a38', fontFamily:"'DM Mono',monospace", fontSize:11, width:20, textAlign:'center', flexShrink:0 }}>{idx+1}</span>
-            {item.imgs && item.imgs[0]
-              ? <img src={item.imgs[0]} alt="" style={{ width:52, height:52, objectFit:'cover', borderRadius:6, flexShrink:0 }} onError={e=>e.target.style.display='none'} />
-              : <div style={{ width:52, height:52, borderRadius:6, background:'rgba(255,255,255,.03)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <span style={{ color:'#2a2a38', fontSize:16 }}>✦</span>
-                </div>
-            }
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-                <p style={{ color:'#e8e0d0', fontSize:13, fontWeight:500, margin:0, fontFamily:"'DM Sans',sans-serif" }}>{item.name}</p>
-                <Pill label={item.tag} />
-              </div>
-              <p style={{ color:'#3a3a50', fontSize:11, margin:0, fontFamily:"'DM Mono',monospace", whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.desc}</p>
-            </div>
-            <span style={{ color:'#c9a84c', fontFamily:"'DM Mono',monospace", fontSize:13, fontWeight:600, flexShrink:0 }}>{item.price}</span>
-            <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-              <button onClick={()=>openEdit(item)} style={S.editBtn}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.15)';e.currentTarget.style.color='#aaa'}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.07)';e.currentTarget.style.color='#666'}}>
-                Edit
-              </button>
-              <button onClick={()=>deleteItem(item.id)} style={S.delBtn}
-                onMouseEnter={e=>{e.currentTarget.style.color='#e57373';e.currentTarget.style.borderColor='rgba(244,67,54,.4)'}}
-                onMouseLeave={e=>{e.currentTarget.style.color='rgba(244,67,54,.5)';e.currentTarget.style.borderColor='rgba(244,67,54,.15)'}}>
-                ✕
-              </button>
-            </div>
-          </div>
+          <MerchRow key={item.id} item={item} idx={idx} onEdit={openEdit} onDelete={deleteItem} />
         ))}
       </div>
     </div>
@@ -1719,8 +1821,8 @@ function BookingsEditor({ onCount }) {
     : rows
 
   const cols = tab === 'bookings'
-    ? ['timestamp','destination','name','phone','email','date','travellers','budget','message']
-    : ['timestamp','product','category','price','name','phone','email','size','sleeve','height','age','note']
+    ? ['destination','name','phone','email','date','travellers','budget','message']
+    : ['product','category','price','name','phone','email','size','sleeve','height','age','note']
 
   const fmtPhone = (v) => {
     if (!v) return v
@@ -1825,7 +1927,7 @@ function BookingsEditor({ onCount }) {
         </div>
       ) : (
         <div style={{ overflowX:'auto' }}>
-          <table style={{ width:'100%', borderCollapse:'collapse', fontFamily:"'DM Mono',monospace", fontSize:11 }}>
+          <table className="bookings-table" style={{ width:'100%', borderCollapse:'collapse', fontFamily:"'DM Mono',monospace", fontSize:11 }}>
             <thead>
               <tr>
                 {cols.map(col => (
@@ -2062,13 +2164,17 @@ function AdminPage({ activeUser, onLogout }) {
   const [dirty, setDirty] = useState(false)
   const [vw, setVw] = useState(window.innerWidth)
   const isMobile = vw < 640
-  const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
+  const isTablet = vw >= 640 && vw < 1024
+  const isDesktop = vw >= 1024
+  const [sidebarOpen, setSidebarOpen] = useState(isDesktop)
 
   useEffect(() => {
     const handle = () => {
       const w = window.innerWidth
       setVw(w)
-      if (w >= 640) setSidebarOpen(prev => prev === false && w >= 640 ? true : prev)
+      // On resize to desktop, open sidebar; on resize to tablet/mobile, close drawer
+      if (w >= 1024) setSidebarOpen(true)
+      else if (w < 640) setSidebarOpen(false)
     }
     window.addEventListener('resize', handle)
     return () => window.removeEventListener('resize', handle)
@@ -2156,6 +2262,14 @@ function AdminPage({ activeUser, onLogout }) {
         @keyframes toastIn { from{opacity:0;transform:translateY(12px) scale(.96)} to{opacity:1;transform:translateY(0) scale(1)} }
         @keyframes spin { to{transform:rotate(360deg)} }
         @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+        /* Mobile: show only 3 columns — destination/product, name, phone */
+        @media (max-width: 639px) {
+          .bookings-table th:nth-child(n+4),
+          .bookings-table td:nth-child(n+4) { display: none; }
+        }
+        @media (max-width: 639px) {
+          input, textarea, select { font-size: 16px !important; }
+        }
       `}</style>
 
       {/* TOP BAR */}
@@ -2164,14 +2278,14 @@ function AdminPage({ activeUser, onLogout }) {
         background:'rgba(5,5,12,.95)',
         borderBottom:'1px solid rgba(255,255,255,.05)',
         display:'flex', alignItems:'center', justifyContent:'space-between',
-        padding:'0 20px',
+        padding: isMobile ? '0 12px' : '0 20px',
         backdropFilter:'blur(20px)',
         position:'sticky', top:0, zIndex:100,
       }}>
         {/* Left: breadcrumb */}
-        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-          {/* Hamburger — always visible on mobile, hidden on desktop (desktop uses sidebar's own toggle) */}
-          {isMobile && (
+        <div style={{ display:'flex', alignItems:'center', gap: isMobile ? 8 : 14 }}>
+          {/* Hamburger — mobile: always, tablet: always, desktop: hidden (sidebar has its own toggle) */}
+          {!isDesktop && (
             <button
               onClick={() => setSidebarOpen(o => !o)}
               style={{
@@ -2186,7 +2300,7 @@ function AdminPage({ activeUser, onLogout }) {
               onMouseEnter={e=>{ e.currentTarget.style.borderColor='rgba(201,168,76,.4)'; e.currentTarget.style.color='#c9a84c' }}
               onMouseLeave={e=>{ e.currentTarget.style.borderColor='rgba(255,255,255,.07)'; e.currentTarget.style.color='#666' }}
             >
-              {sidebarOpen
+              {sidebarOpen && isMobile
                 ? <span style={{ fontSize:14, lineHeight:1, fontFamily:"'DM Mono',monospace" }}>✕</span>
                 : <>
                     <span style={{ display:'block', width:14, height:1.5, background:'currentColor', borderRadius:1 }} />
@@ -2197,51 +2311,74 @@ function AdminPage({ activeUser, onLogout }) {
             </button>
           )}
           <a href="/">
-            <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:48, display:'block' }} />
+            <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height: isMobile ? 36 : 48, display:'block' }} />
           </a>
-          <div style={{ width:1, height:16, background:'rgba(255,255,255,.06)' }} />
-          <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.2em', color:'#3a3a50', textTransform:'uppercase' }}>Admin Edit/Create</span>
-          <div style={{ width:1, height:16, background:'rgba(255,255,255,.06)' }} />
-          <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:12, color:'#444', letterSpacing:'0.02em' }}>
-            {[...OPS_SECTIONS, ...CONFIG_SECTIONS].find(s=>s.key===active)?.label}
-          </span>
+          {!isMobile && <>
+            <div style={{ width:1, height:16, background:'rgba(255,255,255,.06)' }} />
+            <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.2em', color:'#3a3a50', textTransform:'uppercase' }}>Admin</span>
+          </>}
+          {isDesktop && <>
+            <div style={{ width:1, height:16, background:'rgba(255,255,255,.06)' }} />
+            <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:12, color:'#444', letterSpacing:'0.02em' }}>
+              {[...OPS_SECTIONS, ...CONFIG_SECTIONS].find(s=>s.key===active)?.label}
+            </span>
+          </>}
         </div>
 
         {/* Right: actions */}
-        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          <button onClick={exportJson} style={{
-            background:'transparent', border:'1px solid rgba(255,255,255,.07)', color:'#444',
-            padding:'6px 14px', borderRadius:6, cursor:'pointer',
-            fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.14em',
-            transition:'all .15s',
-          }}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.15)';e.currentTarget.style.color='#888'}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.07)';e.currentTarget.style.color='#444'}}>
-            ↓ Export
-          </button>
-          <button onClick={handleReset} style={{
-            background:'transparent', border:'1px solid rgba(255,255,255,.07)', color:'#444',
-            padding:'6px 14px', borderRadius:6, cursor:'pointer',
-            fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.14em',
-            transition:'all .15s',
-          }}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.15)';e.currentTarget.style.color='#888'}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.07)';e.currentTarget.style.color='#444'}}>
-            Reset
-          </button>
+        <div style={{ display:'flex', gap: isMobile ? 6 : 8, alignItems:'center' }}>
+          {!isMobile && (
+            <button onClick={exportJson} style={{
+              background:'transparent', border:'1px solid rgba(255,255,255,.07)', color:'#444',
+              padding:'6px 14px', borderRadius:6, cursor:'pointer',
+              fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.14em',
+              transition:'all .15s',
+            }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.15)';e.currentTarget.style.color='#888'}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.07)';e.currentTarget.style.color='#444'}}>
+              ↓ Export
+            </button>
+          )}
+          {!isMobile && (
+            <button onClick={handleReset} style={{
+              background:'transparent', border:'1px solid rgba(255,255,255,.07)', color:'#444',
+              padding:'6px 14px', borderRadius:6, cursor:'pointer',
+              fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.14em',
+              transition:'all .15s',
+            }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.15)';e.currentTarget.style.color='#888'}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.07)';e.currentTarget.style.color='#444'}}>
+              Reset
+            </button>
+          )}
+          {isMobile && (
+            <button onClick={exportJson} title="Export JSON" style={{
+              background:'transparent', border:'1px solid rgba(255,255,255,.07)', color:'#444',
+              width:32, height:32, borderRadius:6, cursor:'pointer',
+              fontFamily:"'DM Mono',monospace", fontSize:13,
+              display:'flex', alignItems:'center', justifyContent:'center',
+              transition:'all .15s', flexShrink:0,
+            }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.15)';e.currentTarget.style.color='#888'}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.07)';e.currentTarget.style.color='#444'}}>
+              ↓
+            </button>
+          )}
           <button onClick={handleSave} disabled={saving} style={{
             background: saving?'rgba(201,168,76,.2)':'linear-gradient(135deg,#c9a84c,#e8c96a)',
             border: dirty && !saving ? '1px solid #e8c96a' : 'none',
             color: saving?'#c9a84c':'#050508',
-            padding:'7px 18px', borderRadius:6, cursor: saving?'not-allowed':'pointer',
+            padding: isMobile ? '7px 14px' : '7px 18px',
+            borderRadius:6, cursor: saving?'not-allowed':'pointer',
             fontFamily:"'DM Mono',monospace", fontSize:9, fontWeight:700,
             letterSpacing:'0.16em', textTransform:'uppercase',
             boxShadow: saving?'none': dirty ? '0 2px 20px rgba(201,168,76,.55)' : '0 2px 14px rgba(201,168,76,.3)',
             transition:'all .2s',
             display:'flex', alignItems:'center', gap:6,
+            whiteSpace:'nowrap',
           }}>
             {dirty && !saving && <span style={{ width:5, height:5, borderRadius:'50%', background:'#050508', flexShrink:0 }} />}
-            {saving ? '··· Saving' : 'Save Changes'}
+            {saving ? '···' : isMobile ? 'Save' : 'Save Changes'}
           </button>
         </div>
       </div>
@@ -2255,13 +2392,15 @@ function AdminPage({ activeUser, onLogout }) {
           open={sidebarOpen}
           onToggle={() => setSidebarOpen(o => !o)}
           isMobile={isMobile}
+          isTablet={isTablet}
+          isDesktop={isDesktop}
           activeUser={activeUser}
           onLogout={onLogout}
         />
 
         {/* MAIN EDITOR */}
         <div style={{
-          flex:1, padding: isMobile ? '24px 18px' : '36px 40px',
+          flex:1, padding: isMobile ? '20px 16px' : isTablet ? '28px 28px' : '36px 40px',
           overflowY:'auto', minWidth:0,
           animation:'fadeIn .2s ease',
         }}>
@@ -2274,7 +2413,7 @@ function AdminPage({ activeUser, onLogout }) {
           {active==='bookings' && <BookingsEditor onCount={c => setData(prev => ({...prev, bookingCount: c}))} />}
         </div>
 
-        {active !== 'bookings' && <PreviewPanel active={active} data={data} />}
+        {isDesktop && active !== 'bookings' && <PreviewPanel active={active} data={data} />}
       </div>
 
       {/* LOADING OVERLAY */}

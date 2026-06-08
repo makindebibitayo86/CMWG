@@ -116,19 +116,19 @@ const MODAL_CONTENT = {
   'Privacy Policy': {
     heading: 'Privacy Policy',
     sub: 'Your data. Your trust. Handled with care.',
-    body: `Last updated: January 2025\n\nCMWG ("we", "us", "our") is committed to protecting the personal information of our users and customers. This policy explains what data we collect, how we use it, and your rights.\n\nWe collect information you provide directly (name, email, phone) when submitting enquiries or orders. We do not sell your data to third parties. Information is used solely to process your travel or merchandise requests and communicate with you.\n\nWe use industry-standard security practices to protect your information. You may request deletion of your data at any time by contacting us directly.`,
+    body: `Last updated: June 2026\n\nCMWG ("we", "us", "our") is committed to protecting the personal information of our users and customers. This policy explains what data we collect, how we use it, and your rights.\n\nWe collect information you provide directly (name, email, phone) when submitting enquiries or orders. We do not sell your data to third parties. Information is used solely to process your travel or merchandise requests and communicate with you.\n\nWe use industry-standard security practices to protect your information. You may request deletion of your data at any time by contacting us directly.`,
     items: ['No data sold to third parties', 'Used only for order & booking processing', 'Secure storage via encrypted services', 'Email communications are opt-in', 'Data deletion available on request', 'Contact: cmwg.worldwide@gmail.com'],
   },
   'Terms of Use': {
     heading: 'Terms of Use',
     sub: 'Clear terms. No surprises.',
-    body: `Last updated: January 2025\n\nBy using the CMWG website and services, you agree to these terms. Our platform is intended for personal, non-commercial use related to travel planning and merchandise.\n\nAll content on this site — including images, copy, and video — is the intellectual property of CMWG and may not be reproduced without written permission. Bookings and orders placed through our platform are subject to our cancellation and refund policy, available on request.\n\nWe reserve the right to update these terms at any time. Continued use of our services constitutes acceptance of any changes.`,
+    body: `Last updated: June 2026\n\nBy using the CMWG website and services, you agree to these terms. Our platform is intended for personal, non-commercial use related to travel planning and merchandise.\n\nAll content on this site — including images, copy, and video — is the intellectual property of CMWG and may not be reproduced without written permission. Bookings and orders placed through our platform are subject to our cancellation and refund policy, available on request.\n\nWe reserve the right to update these terms at any time. Continued use of our services constitutes acceptance of any changes.`,
     items: ['Personal, non-commercial use only', 'All content © CMWG', 'No reproduction without permission', 'Cancellation policy available on request', 'Dispute resolution via direct contact', 'Nigerian law governs these terms'],
   },
   'Cookie Policy': {
     heading: 'Cookie Policy',
     sub: 'We use cookies to make this work better.',
-    body: `Last updated: January 2025\n\nCMWG uses a minimal set of cookies to ensure our website functions correctly and to understand how visitors use it. We do not use advertising or tracking cookies.\n\nEssential cookies are required for the site to function and cannot be disabled. Analytics cookies (if enabled) help us understand traffic patterns in aggregate — no personally identifiable data is collected. You can manage cookie preferences through your browser settings at any time.`,
+    body: `Last updated: June 2026\n\nCMWG uses a minimal set of cookies to ensure our website functions correctly and to understand how visitors use it. We do not use advertising or tracking cookies.\n\nEssential cookies are required for the site to function and cannot be disabled. Analytics cookies (if enabled) help us understand traffic patterns in aggregate — no personally identifiable data is collected. You can manage cookie preferences through your browser settings at any time.`,
     items: ['Essential cookies: always active', 'Analytics: aggregate data only', 'No advertising cookies', 'No cross-site tracking', 'Manageable via browser settings', 'Third-party: Google Analytics (anonymised)'],
   },
 }
