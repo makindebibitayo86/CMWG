@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 40 },
@@ -9,6 +10,7 @@ const fadeUp = (delay = 0) => ({
 
 function Hero() {
   const [scale, setScale] = useState(1)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const update = () => {
@@ -70,10 +72,10 @@ function Hero() {
             <p>Curated travel packages</p>
           </a>
 
-          <a href="#destinations" className="hero__card">
-            <h3>Excursions</h3>
-            <p>Guided local experiences</p>
-          </a>
+          <button onClick={() => navigate('/booking')} className="hero__card">
+            <h3>Find Hotels</h3>
+            <p>Hand-picked stays worldwide</p>
+          </button>
 
           <a href="#shop" className="hero__card">
             <h3>Merch</h3>
@@ -195,6 +197,10 @@ function Hero() {
           text-decoration: none;
           color: white;
           transition: 0.3s;
+          cursor: pointer;
+          text-align: left;
+          width: 100%;
+          font-family: 'Montserrat', sans-serif;
         }
 
         .hero__card:hover {

@@ -40,19 +40,39 @@ export default function About() {
 
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
 
-  // ── Video crossfade logic ──────────────────────────────────────────────────
-  const [activeIndex, setActiveIndex] = useState(0);
+  // ── Scale logic: shrink on mobile, measure real height to collapse the gap ──
   const [scale, setScale] = useState(1);
+  const [sectionHeight, setSectionHeight] = useState(null);
 
   useEffect(() => {
+    const designWidth = 1280;
+
     const update = () => {
-      const designWidth = 1280;
-      setScale(window.innerWidth < designWidth ? window.innerWidth / designWidth : 1);
+      const s = window.innerWidth < designWidth
+        ? window.innerWidth / designWidth
+        : 1;
+      setScale(s);
     };
+
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+
+  // After each render, measure the section's natural height and store it
+  // so the wrapper can be set to scaledHeight = naturalHeight * scale
+  useEffect(() => {
+    if (!sectionRef.current) return;
+    const ro = new ResizeObserver(() => {
+      setSectionHeight(sectionRef.current.offsetHeight);
+    });
+    ro.observe(sectionRef.current);
+    return () => ro.disconnect();
+  }, []);
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ── Video crossfade logic ──────────────────────────────────────────────────
+  const [activeIndex, setActiveIndex] = useState(0);
   const videoRefs = [useRef(null), useRef(null)];
   const crossfadingRef = useRef(false);
 
@@ -116,7 +136,13 @@ export default function About() {
   };
 
   return (
-    <div style={{ overflow: "hidden" }}>
+    <div
+      style={{
+        overflow: "hidden",
+        // Collapse the extra space left by scale() by clamping wrapper to scaled height
+        height: scale < 1 && sectionHeight ? sectionHeight * scale : undefined,
+      }}
+    >
     <section
       id="about"
       ref={sectionRef}
@@ -128,7 +154,6 @@ export default function About() {
         transform: `scale(${scale})`,
         transformOrigin: "top left",
         width: scale < 1 ? `${100 / scale}%` : "100%",
-        marginBottom: scale < 1 ? `calc((${scale} - 1) * 100%)` : 0,
       }}
     >
       {/* ── Video A ── */}

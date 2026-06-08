@@ -3,14 +3,24 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 
 const navLinks = [
   { label: 'Destinations', href: '#destinations' },
+  { label: 'Hotels', href: '/booking' },
   { label: 'Merch', href: '#shop' },
   { label: 'About', href: '#about' },
 ]
+
+/* If we're not on the home page, hash links must go back home first */
+function resolveHref(href) {
+  if (href.startsWith('#') && window.location.pathname !== '/') {
+    return `/${href}`
+  }
+  return href
+}
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [scale, setScale] = useState(1)
+  const [activeHref, setActiveHref] = useState('')
   const prefersReduced = useReducedMotion()
   const drawerRef = useRef(null)
   const hamburgerRef = useRef(null)
@@ -25,10 +35,72 @@ function Navbar() {
     return () => window.removeEventListener('resize', update)
   }, [])
 
+  /* Detect active section via IntersectionObserver for hash links,
+     and pathname match for page links */
+  useEffect(() => {
+    // Set active for pathname-based links on mount
+    const pageLinks = navLinks.filter(l => !l.href.startsWith('#'))
+    const matched = pageLinks.find(l => window.location.pathname === l.href)
+    if (matched) {
+      setActiveHref(matched.href)
+      return
+    }
+
+    const hashLinks = navLinks.filter(l => l.href.startsWith('#'))
+    const sectionIds = hashLinks.map(l => l.href.slice(1))
+
+    const observers = []
+    const visibilityMap = {}
+
+    const pickActive = () => {
+      // Pick the section with the highest intersection ratio
+      let best = null
+      let bestRatio = 0
+      for (const [id, ratio] of Object.entries(visibilityMap)) {
+        if (ratio > bestRatio) {
+          bestRatio = ratio
+          best = id
+        }
+      }
+      setActiveHref(best ? `#${best}` : '')
+    }
+
+    sectionIds.forEach(id => {
+      const el = document.getElementById(id)
+      if (!el) return
+      const obs = new IntersectionObserver(
+        ([entry]) => {
+          visibilityMap[id] = entry.intersectionRatio
+          pickActive()
+        },
+        { threshold: [0, 0.25, 0.5, 0.75, 1] }
+      )
+      obs.observe(el)
+      observers.push(obs)
+    })
+
+    return () => observers.forEach(o => o.disconnect())
+  }, [])
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  /* Scroll to hash on page load (e.g. arriving from /#destinations) */
+  useEffect(() => {
+    const hash = window.location.hash
+    if (!hash) return
+    const tryScroll = (attempts = 0) => {
+      const el = document.querySelector(hash)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      } else if (attempts < 10) {
+        setTimeout(() => tryScroll(attempts + 1), 100)
+      }
+    }
+    tryScroll()
   }, [])
 
   useEffect(() => {
@@ -103,7 +175,12 @@ function Navbar() {
         {/* Desktop Links */}
         <nav className="navbar__links" aria-label="Main navigation">
           {navLinks.map((link) => (
-            <a key={link.label} href={link.href} className="navbar__link">
+            <a
+              key={link.label}
+              href={resolveHref(link.href)}
+              className={`navbar__link${activeHref === link.href ? ' navbar__link--active' : ''}`}
+              aria-current={activeHref === link.href ? 'page' : undefined}
+            >
               {link.label}
             </a>
           ))}
@@ -157,9 +234,10 @@ function Navbar() {
               {navLinks.map((link, i) => (
                 <motion.a
                   key={link.label}
-                  href={link.href}
+                  href={resolveHref(link.href)}
                   onClick={() => setMenuOpen(false)}
-                  className="drawer__link"
+                  className={`drawer__link${activeHref === link.href ? ' drawer__link--active' : ''}`}
+                  aria-current={activeHref === link.href ? 'page' : undefined}
                   variants={linkVariants(i)}
                   initial="hidden"
                   animate="visible"
@@ -294,6 +372,10 @@ function Navbar() {
           position: relative;
           transition: color 0.2s ease;
           outline: none;
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-family: inherit;
         }
 
         .navbar__link::after {
@@ -318,6 +400,15 @@ function Navbar() {
           outline: 2px solid var(--gold);
           outline-offset: 4px;
           border-radius: 2px;
+        }
+
+        /* Active state */
+        .navbar__link--active {
+          color: var(--gold);
+        }
+        .navbar__link--active::after {
+          right: 0;
+          background: var(--gold);
         }
 
         /* ── Right cluster ── */
@@ -449,10 +540,13 @@ function Navbar() {
           border-radius: 3px;
           transition: color 0.2s ease;
           outline: none;
-          /* min tap target */
           min-height: 44px;
           display: inline-flex;
           align-items: center;
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-family: inherit;
         }
         .drawer__link:hover,
         .drawer__link:focus-visible {
@@ -461,6 +555,21 @@ function Navbar() {
         .drawer__link:focus-visible {
           outline: 2px solid var(--gold);
           outline-offset: 4px;
+        }
+
+        /* Active state in drawer */
+        .drawer__link--active {
+          color: var(--gold);
+        }
+        .drawer__link--active::before {
+          content: '';
+          display: inline-block;
+          width: 6px;
+          height: 6px;
+          background: var(--gold);
+          border-radius: 50%;
+          margin-right: 0.5em;
+          flex-shrink: 0;
         }
 
         .drawer__cta {
