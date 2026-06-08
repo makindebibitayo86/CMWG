@@ -609,9 +609,9 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, isTablet, i
   }
 
   // Tablet: always icon-only (collapsed), not toggleable from sidebar
-  // Mobile: full drawer from hamburger
+  // Mobile: icon-only drawer from hamburger
   // Desktop: toggleable expand/collapse
-  const effectiveOpen = isDesktop ? open : (isTablet ? false : open)
+  const effectiveOpen = isDesktop ? open : false
   const sidebarWidth = effectiveOpen ? 220 : 52
 
   return (
@@ -627,7 +627,7 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, isTablet, i
       )}
 
       <div style={{
-        width: isMobile ? (open ? 260 : 0) : sidebarWidth,
+        width: isMobile ? (open ? 52 : 0) : sidebarWidth,
         flexShrink:0,
         background:'#060610',
         borderRight:'1px solid rgba(255,255,255,.04)',
@@ -637,14 +637,14 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, isTablet, i
         // On mobile: fixed drawer that slides in from left
         ...(isMobile ? {
           position:'fixed', top:0, left:0, bottom:0, zIndex:150,
-          width: open ? 260 : 0,
+          width: open ? 52 : 0,
           overflow:'hidden',
           transition:'width .25s cubic-bezier(.4,0,.2,1)',
           boxShadow: open ? '4px 0 40px rgba(0,0,0,.6)' : 'none',
         } : {}),
       }}>
         <div style={{
-          width: isMobile ? 260 : (effectiveOpen ? 220 : 52),
+          width: isMobile ? 52 : (effectiveOpen ? 220 : 52),
           display:'flex', flexDirection:'column', height:'100%',
           overflow:'hidden',
         }}>
