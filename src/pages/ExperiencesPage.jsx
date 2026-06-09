@@ -320,7 +320,7 @@ function ExperienceModal({ experience, onClose }) {
             </div>
 
             <Link
-              to="/booking"
+              to="/#destinations"
               className="xpm__book-btn xpm__book-btn--desktop"
               onClick={onClose}
             >
@@ -339,7 +339,7 @@ function ExperienceModal({ experience, onClose }) {
               <p>{experience.story}</p>
             </div>
             <Link
-              to="/booking"
+              to="/#destinations"
               className="xpm__book-btn"
               onClick={onClose}
             >
@@ -374,11 +374,22 @@ export default function ExperiencesPage() {
   }, [])
 
   useEffect(() => {
+    const CACHE_KEY = 'xpp_experiences_cache'
+    const cached = sessionStorage.getItem(CACHE_KEY)
+    if (cached) {
+      try {
+        setExperiences(JSON.parse(cached))
+        setLoading(false)
+        return
+      } catch (_) {}
+    }
     fetch(`${GAS_URL}?type=experiences`)
       .then(r => r.json())
       .then(res => {
-        setExperiences(res.data || [])
+        const data = res.data || []
+        setExperiences(data)
         setLoading(false)
+        try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)) } catch (_) {}
       })
       .catch(err => {
         console.error('Failed to load experiences:', err)
@@ -451,7 +462,28 @@ export default function ExperiencesPage() {
 
         {/* Experience Grid — big + two small, alternating */}
         {loading && (
-          <div className="xpp__status">Loading experiences…</div>
+          <>
+            {/* Mobile skeleton */}
+            <div className="xpp__mobile-carousel xpp__mobile-carousel--skeleton">
+              <div className="xpp__mobile-track">
+                {[0,1,2].map(i => (
+                  <div key={i} className="xpc xpc--mobile xpc--skeleton" />
+                ))}
+              </div>
+            </div>
+            {/* Desktop skeleton */}
+            <div className="xpp__pages xpp__pages--skeleton">
+              {[0,1].map(gi => (
+                <div key={gi} className={`xpp__group ${gi % 2 === 1 ? 'xpp__group--flip' : ''}`}>
+                  <div className="xpc xpc--large xpc--skeleton" />
+                  <div className="xpp__small-stack">
+                    <div className="xpc xpc--small xpc--skeleton" />
+                    <div className="xpc xpc--small xpc--skeleton" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
         {error && (
           <div className="xpp__status xpp__status--error">{error}</div>
@@ -485,7 +517,7 @@ export default function ExperiencesPage() {
                   role="button"
                   aria-label={`View ${exp.title}`}
                 >
-                  <img src={exp.coverImage} alt={exp.title} className="xpc__img" draggable={false} />
+                  <img src={exp.coverImage} alt={exp.title} className="xpc__img" draggable={false} loading="lazy" />
                   {exp.coverVideo && (
                     <video ref={el => videoRefs.current[exp.id] = el} src={exp.coverVideo}
                       muted loop playsInline preload="none" className="xpc__video"
@@ -575,7 +607,7 @@ export default function ExperiencesPage() {
                     role="button"
                     aria-label={`View ${a.title}`}
                   >
-                    <img src={a.coverImage} alt={a.title} className="xpc__img" draggable={false} />
+                    <img src={a.coverImage} alt={a.title} className="xpc__img" draggable={false} loading="lazy" />
                     {a.coverVideo && (
                       <video ref={el => videoRefs.current[a.id] = el} src={a.coverVideo}
                         muted loop playsInline preload="none" className="xpc__video"
@@ -606,7 +638,7 @@ export default function ExperiencesPage() {
                       role="button"
                       aria-label={`View ${exp.title}`}
                     >
-                      <img src={exp.coverImage} alt={exp.title} className="xpc__img" draggable={false} />
+                      <img src={exp.coverImage} alt={exp.title} className="xpc__img" draggable={false} loading="lazy" />
                       {exp.coverVideo && (
                         <video ref={el => videoRefs.current[exp.id] = el} src={exp.coverVideo}
                           muted loop playsInline preload="none" className="xpc__video"
@@ -736,8 +768,41 @@ export default function ExperiencesPage() {
           color: rgba(250,250,248,0.28);
         }
 
+
         .xpp__status--error {
           color: rgba(220,80,80,0.7);
+        }
+
+        /* ═══════════════════════════════════════
+           SKELETON LOADING
+        ═══════════════════════════════════════ */
+        @keyframes xpp-shimmer {
+          0%   { background-position: -600px 0; }
+          100% { background-position:  600px 0; }
+        }
+
+        .xpc--skeleton {
+          cursor: default;
+          background: #161616;
+          background-image: linear-gradient(
+            90deg,
+            #161616 0px,
+            #222 200px,
+            #161616 400px
+          );
+          background-size: 600px 100%;
+          animation: xpp-shimmer 1.6s infinite linear;
+          pointer-events: none;
+        }
+
+        .xpc--skeleton::after { display: none; }
+
+        .xpp__mobile-carousel--skeleton { display: none; }
+        .xpp__pages--skeleton { display: block; }
+
+        @media (max-width: 1024px) {
+          .xpp__mobile-carousel--skeleton { display: block; }
+          .xpp__pages--skeleton           { display: none; }
         }
 
         /* ═══════════════════════════════════════

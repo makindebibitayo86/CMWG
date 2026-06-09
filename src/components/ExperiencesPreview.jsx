@@ -2,11 +2,31 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
+const CACHE_KEY = 'xp_preview_cache'
 
 function chunkArray(arr, size) {
   const chunks = []
   for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size))
   return chunks
+}
+
+// ── Skeleton page: mirrors the real grid (1 large + 2 small) ──
+function SkeletonPage({ flip = false }) {
+  return (
+    <div className={`xp-prev__page ${flip ? 'xp-prev__page--flip' : ''}`}>
+      <div className="xp-card xp-card--large xp-card--skeleton">
+        <div className="xp-skeleton__shimmer" />
+      </div>
+      <div className="xp-prev__small-stack">
+        <div className="xp-card xp-card--small xp-card--skeleton">
+          <div className="xp-skeleton__shimmer" />
+        </div>
+        <div className="xp-card xp-card--small xp-card--skeleton">
+          <div className="xp-skeleton__shimmer" />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function ExperiencesPreview() {
@@ -19,6 +39,17 @@ export default function ExperiencesPreview() {
   const drag = useRef({ isDown: false, startX: 0, scrollLeft: 0, velocity: 0, frame: null })
 
   useEffect(() => {
+    // ── 1. Try session cache first ──
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY)
+      if (cached) {
+        setExperiences(JSON.parse(cached))
+        setLoading(false)
+        return
+      }
+    } catch (_) {}
+
+    // ── 2. Fetch from GAS, then persist to session cache ──
     fetch(`${SHEET_URL}?type=experiences`)
       .then(r => r.json())
       .then(res => {
@@ -26,6 +57,7 @@ export default function ExperiencesPreview() {
           ...exp,
           gallery: (exp.gallery || []).slice(0, 3),
         }))
+        try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(all)) } catch (_) {}
         setExperiences(all)
       })
       .catch(() => setExperiences([]))
@@ -36,7 +68,7 @@ export default function ExperiencesPreview() {
   const pages = chunkArray(featured, 3)
   const totalPages = pages.length
 
-  // ── Native scroll drag (same pattern as Destinations) ──
+  // ── Native scroll drag ──
   const onDown = (e) => {
     const el = scrollRef.current
     if (!el) return
@@ -100,6 +132,7 @@ export default function ExperiencesPreview() {
     return isNaN(parsed) ? d : parsed.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
   }
 
+  // ── Skeleton state: show 1 placeholder page while loading ──
   if (loading) return (
     <section id="experiences" className="xp-prev">
       <div className="xp-prev__header">
@@ -107,8 +140,10 @@ export default function ExperiencesPreview() {
         <h2 className="xp-prev__title">Real Trips. Real Memories.</h2>
         <p className="xp-prev__sub">Every experience — documented, curated, and lived.</p>
       </div>
-      <div className="xp-prev__loading">
-        <div className="xp-prev__spinner" />
+      <div className="xp-prev__outer">
+        <div className="xp-prev__scroll xp-prev__scroll--skeleton">
+          <SkeletonPage />
+        </div>
       </div>
       <style>{styles}</style>
     </section>
@@ -149,7 +184,8 @@ export default function ExperiencesPreview() {
                     onMouseLeave={() => pauseVideo(a.id)}
                     onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
                   >
-                    <img src={a.coverImage} alt={a.title} className="xp-card__img" draggable={false} />
+                    {/* ── 3. lazy image ── */}
+                    <img src={a.coverImage} alt={a.title} className="xp-card__img" draggable={false} loading="lazy" />
                     {a.coverVideo && (
                       <video ref={el => videoRefs.current[a.id] = el} src={a.coverVideo}
                         muted loop playsInline preload="none" className="xp-card__video"
@@ -177,7 +213,8 @@ export default function ExperiencesPreview() {
                       onMouseLeave={() => pauseVideo(exp.id)}
                       onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
                     >
-                      <img src={exp.coverImage} alt={exp.title} className="xp-card__img" draggable={false} />
+                      {/* ── 3. lazy image ── */}
+                      <img src={exp.coverImage} alt={exp.title} className="xp-card__img" draggable={false} loading="lazy" />
                       {exp.coverVideo && (
                         <video ref={el => videoRefs.current[exp.id] = el} src={exp.coverVideo}
                           muted loop playsInline preload="none" className="xp-card__video"
@@ -266,36 +303,45 @@ const styles = `
     margin: 0;
   }
 
-  .xp-prev__loading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 300px;
+  /* ── SKELETON ── */
+  .xp-card--skeleton {
+    background: #161616;
+    overflow: hidden;
   }
 
-  .xp-prev__spinner {
-    width: 28px;
-    height: 28px;
-    border: 2px solid rgba(201,168,76,0.15);
-    border-top-color: #c9a84c;
-    border-radius: 50%;
-    animation: xpSpin 0.7s linear infinite;
+  .xp-skeleton__shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(255,255,255,0)    0%,
+      rgba(255,255,255,0.04) 40%,
+      rgba(255,255,255,0.08) 50%,
+      rgba(255,255,255,0.04) 60%,
+      rgba(255,255,255,0)    100%
+    );
+    background-size: 200% 100%;
+    animation: xp-shimmer 1.6s ease-in-out infinite;
   }
 
-  @keyframes xpSpin { to { transform: rotate(360deg); } }
+  @keyframes xp-shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
 
-  /* ── SCROLL CONTAINER ── */
+  /* pointer-events off while skeleton is showing so it doesn't feel broken */
+  .xp-prev__scroll--skeleton { pointer-events: none; }
+
+  /* ── OUTER / SCROLL ── */
   .xp-prev__outer {
-    max-width: 1100px;
-    margin: 0 auto;
     overflow: hidden;
   }
 
   .xp-prev__scroll {
     display: flex;
-    overflow-x: scroll;
+    overflow-x: auto;
     scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
+    gap: 24px;
     scrollbar-width: none;
     -ms-overflow-style: none;
     cursor: grab;

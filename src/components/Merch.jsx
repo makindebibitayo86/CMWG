@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
 const FORMSPREE_URL = 'https://formspree.io/f/xqeopbeb'
+const CACHE_KEY = 'merch_cache'
 
 
 const categories = ['All', 'Clothing', 'Travel Gear']
@@ -70,7 +71,7 @@ function MerchModal({ item, onClose }) {
           {/* LEFT — gallery */}
           <div className="m-gallery">
             <div className="m-main-img">
-              <img src={item.imgs?.[activeImg] ?? item.imgs?.[0] ?? ''} alt={item.name} />
+              <img src={item.imgs?.[activeImg] ?? item.imgs?.[0] ?? ''} alt={item.name} loading="lazy" />
               {item.tag && <span className="m-tag">{item.tag}</span>}
             </div>
             <div className="m-thumbs">
@@ -80,7 +81,7 @@ function MerchModal({ item, onClose }) {
                   className={`m-thumb ${activeImg === i ? 'active' : ''}`}
                   onClick={() => setActiveImg(i)}
                 >
-                  <img src={src} alt="" />
+                  <img src={src} alt="" loading="lazy" />
                 </div>
               ))}
             </div>
@@ -222,6 +223,16 @@ export default function Merch() {
 
 
   useEffect(() => {
+    // ── 1. Try session cache first ──
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY)
+      if (cached) {
+        setMerchData(JSON.parse(cached))
+        return
+      }
+    } catch (_) {}
+
+    // ── 2. Fetch from GAS, then persist to session cache ──
     fetch(`${SCRIPT_URL}?type=merch`)
       .then(r => r.json())
       .then(({ data }) => {
@@ -235,6 +246,7 @@ export default function Merch() {
               : ['note']
             return { ...item, imgs, fields }
           })
+          try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(merged)) } catch (_) {}
           setMerchData(merged)
         }
       })
@@ -341,7 +353,7 @@ export default function Merch() {
             onClick={() => setOpenItem(item)}
           >
             <div className="merch__img-wrap">
-              <img src={item.imgs?.[0]} alt={item.name} />
+              <img src={item.imgs?.[0]} alt={item.name} loading="lazy" />
               {item.tag && <span className="merch__tag">{item.tag}</span>}
               <div className="merch__img-overlay" />
             </div>

@@ -239,6 +239,15 @@ export default function Destinations() {
 
 
   useEffect(() => {
+    const CACHE_KEY = 'dest_places_cache'
+    const cached = sessionStorage.getItem(CACHE_KEY)
+    if (cached) {
+      try {
+        setPlaces(JSON.parse(cached))
+        setLoadingPlaces(false)
+        return
+      } catch (_) {}
+    }
     fetch(`${SCRIPT_URL}?action=getDestinations`)
       .then(res => res.json())
       .then(({ data }) => {
@@ -250,6 +259,7 @@ export default function Destinations() {
               : d.highlights || [],
           }))
           setPlaces(normalised)
+          try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(normalised)) } catch (_) {}
         } else {
           setFetchError('No destinations found. Please check the sheet.')
         }
@@ -389,7 +399,7 @@ export default function Destinations() {
             onMouseLeave={() => pauseVideo(place.title)}
           >
             <div className="media">
-              <img src={place.img} alt={place.title} />
+              <img src={place.img} alt={place.title} loading="lazy" />
               {place.video && (
                 <video
                   ref={(el) => (videoRefs.current[place.title] = el)}
