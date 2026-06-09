@@ -5,6 +5,8 @@ import Footer from '../components/Footer'
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
 
+
+
 function chunkArray(arr, size) {
   const chunks = []
   for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size))
