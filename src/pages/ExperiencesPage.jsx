@@ -369,6 +369,10 @@ export default function ExperiencesPage() {
   const videoRefs = useRef({})
 
   useEffect(() => {
+    document.title = 'Experiences | CMWG'
+  }, [])
+
+  useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1025)
     check()
     window.addEventListener('resize', check)
