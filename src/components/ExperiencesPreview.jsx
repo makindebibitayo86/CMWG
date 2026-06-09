@@ -33,6 +33,8 @@ export default function ExperiencesPreview() {
   const [experiences, setExperiences] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeDot, setActiveDot] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
+  const [showSwipeHint, setShowSwipeHint] = useState(true)
   const videoRefs = useRef({})
   const navigate = useNavigate()
   const scrollRef = useRef(null)
@@ -62,6 +64,13 @@ export default function ExperiencesPreview() {
       })
       .catch(() => setExperiences([]))
       .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 600)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
   }, [])
 
   const featured = experiences.filter(e => e.featured)
@@ -99,19 +108,27 @@ export default function ExperiencesPreview() {
   }
 
   const onScroll = () => {
+    if (showSwipeHint) setShowSwipeHint(false)
     const el = scrollRef.current
-    if (!el || totalPages <= 1) return
+    if (!el) return
     const max = el.scrollWidth - el.clientWidth
     if (max <= 0) { setActiveDot(0); return }
-    const idx = Math.round((el.scrollLeft / max) * (totalPages - 1))
-    setActiveDot(Math.min(idx, totalPages - 1))
+    const count = isMobile ? featured.length : totalPages
+    if (count <= 1) return
+    const idx = Math.round((el.scrollLeft / max) * (count - 1))
+    setActiveDot(Math.min(idx, count - 1))
   }
 
   const goTo = (i) => {
     const el = scrollRef.current
     if (!el) return
-    const pageWidth = el.clientWidth
-    el.scrollTo({ left: i * pageWidth, behavior: 'smooth' })
+    if (isMobile) {
+      const card = el.querySelector('.xp-card--mobile')
+      const cardWidth = card ? card.offsetWidth + 12 : el.clientWidth
+      el.scrollTo({ left: i * cardWidth, behavior: 'smooth' })
+    } else {
+      el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' })
+    }
   }
 
   const playVideo = (id) => videoRefs.current[id]?.play().catch(() => {})
@@ -170,86 +187,121 @@ export default function ExperiencesPreview() {
           onMouseMove={onMove}
           onScroll={onScroll}
         >
-          {pages.map((group, pageIdx) => {
-            const flip = pageIdx % 2 === 1
-            const [a, b, c] = group
-
-            return (
-              <div key={pageIdx} className={`xp-prev__page ${flip ? 'xp-prev__page--flip' : ''}`}>
-                {a && (
-                  <Link
-                    to="/experiences"
-                    className="xp-card xp-card--large"
-                    onMouseEnter={() => playVideo(a.id)}
-                    onMouseLeave={() => pauseVideo(a.id)}
-                    onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
-                  >
-                    {/* ── 3. lazy image ── */}
-                    <img src={a.coverImage} alt={a.title} className="xp-card__img" draggable={false} loading="lazy" />
-                    {a.coverVideo && (
-                      <video ref={el => videoRefs.current[a.id] = el} src={a.coverVideo}
-                        muted loop playsInline preload="none" className="xp-card__video"
-                        onCanPlay={e => e.target.classList.add('ready')} />
-                    )}
-                    <div className="xp-card__overlay" />
-                    <div className="xp-card__content">
-                      <span className="xp-card__category">{a.category}</span>
-                      <div className="xp-card__bottom">
-                        <h3 className="xp-card__name">{a.title}</h3>
-                        <p className="xp-card__meta">{a.destination} &nbsp;·&nbsp; {formatDate(a.date)} &nbsp;·&nbsp; {a.groupSize} travellers</p>
-                        <p className="xp-card__tagline">{a.tagline}</p>
-                      </div>
+          {isMobile
+            /* ── Mobile: one card per item, horizontal swipe ── */
+            ? featured.map((exp) => (
+                <Link
+                  key={exp.id}
+                  to="/experiences"
+                  className="xp-card xp-card--mobile"
+                  onMouseEnter={() => playVideo(exp.id)}
+                  onMouseLeave={() => pauseVideo(exp.id)}
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
+                >
+                  <img src={exp.coverImage} alt={exp.title} className="xp-card__img" draggable={false} loading="lazy" />
+                  {exp.coverVideo && (
+                    <video ref={el => videoRefs.current[exp.id] = el} src={exp.coverVideo}
+                      muted loop playsInline preload="none" className="xp-card__video"
+                      onCanPlay={e => e.target.classList.add('ready')} />
+                  )}
+                  <div className="xp-card__overlay" />
+                  <div className="xp-card__content">
+                    <span className="xp-card__category">{exp.category}</span>
+                    <div className="xp-card__bottom">
+                      <h3 className="xp-card__name">{exp.title}</h3>
+                      <p className="xp-card__meta">{exp.destination} &nbsp;·&nbsp; {formatDate(exp.date)} &nbsp;·&nbsp; {exp.groupSize} travellers</p>
+                      <p className="xp-card__tagline">{exp.tagline}</p>
                     </div>
-                  </Link>
-                )}
-
-                <div className="xp-prev__small-stack">
-                  {[b, c].map((exp, si) => exp ? (
-                    <Link
-                      key={exp.id}
-                      to="/experiences"
-                      className="xp-card xp-card--small"
-                      onMouseEnter={() => playVideo(exp.id)}
-                      onMouseLeave={() => pauseVideo(exp.id)}
-                      onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
-                    >
-                      {/* ── 3. lazy image ── */}
-                      <img src={exp.coverImage} alt={exp.title} className="xp-card__img" draggable={false} loading="lazy" />
-                      {exp.coverVideo && (
-                        <video ref={el => videoRefs.current[exp.id] = el} src={exp.coverVideo}
-                          muted loop playsInline preload="none" className="xp-card__video"
-                          onCanPlay={e => e.target.classList.add('ready')} />
-                      )}
-                      <div className="xp-card__overlay" />
-                      <div className="xp-card__content">
-                        <span className="xp-card__category">{exp.category}</span>
-                        <div className="xp-card__bottom">
-                          <h3 className="xp-card__name">{exp.title}</h3>
-                          <p className="xp-card__meta">{exp.destination} &nbsp;·&nbsp; {formatDate(exp.date)} &nbsp;·&nbsp; {exp.groupSize} travellers</p>
-                          <p className="xp-card__tagline">{exp.tagline}</p>
+                  </div>
+                </Link>
+              ))
+            /* ── Desktop: grouped pages ── */
+            : pages.map((group, pageIdx) => {
+                const flip = pageIdx % 2 === 1
+                const [a, b, c] = group
+                return (
+                  <div key={pageIdx} className={`xp-prev__page ${flip ? 'xp-prev__page--flip' : ''}`}>
+                    {a && (
+                      <Link
+                        to="/experiences"
+                        className="xp-card xp-card--large"
+                        onMouseEnter={() => playVideo(a.id)}
+                        onMouseLeave={() => pauseVideo(a.id)}
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
+                      >
+                        <img src={a.coverImage} alt={a.title} className="xp-card__img" draggable={false} loading="lazy" />
+                        {a.coverVideo && (
+                          <video ref={el => videoRefs.current[a.id] = el} src={a.coverVideo}
+                            muted loop playsInline preload="none" className="xp-card__video"
+                            onCanPlay={e => e.target.classList.add('ready')} />
+                        )}
+                        <div className="xp-card__overlay" />
+                        <div className="xp-card__content">
+                          <span className="xp-card__category">{a.category}</span>
+                          <div className="xp-card__bottom">
+                            <h3 className="xp-card__name">{a.title}</h3>
+                            <p className="xp-card__meta">{a.destination} &nbsp;·&nbsp; {formatDate(a.date)} &nbsp;·&nbsp; {a.groupSize} travellers</p>
+                            <p className="xp-card__tagline">{a.tagline}</p>
+                          </div>
                         </div>
-                      </div>
-                    </Link>
-                  ) : (
-                    <div key={si} className="xp-card xp-card--small xp-card--empty" />
-                  ))}
-                </div>
-              </div>
-            )
-          })}
+                      </Link>
+                    )}
+                    <div className="xp-prev__small-stack">
+                      {[b, c].map((exp, si) => exp ? (
+                        <Link
+                          key={exp.id}
+                          to="/experiences"
+                          className="xp-card xp-card--small"
+                          onMouseEnter={() => playVideo(exp.id)}
+                          onMouseLeave={() => pauseVideo(exp.id)}
+                          onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
+                        >
+                          <img src={exp.coverImage} alt={exp.title} className="xp-card__img" draggable={false} loading="lazy" />
+                          {exp.coverVideo && (
+                            <video ref={el => videoRefs.current[exp.id] = el} src={exp.coverVideo}
+                              muted loop playsInline preload="none" className="xp-card__video"
+                              onCanPlay={e => e.target.classList.add('ready')} />
+                          )}
+                          <div className="xp-card__overlay" />
+                          <div className="xp-card__content">
+                            <span className="xp-card__category">{exp.category}</span>
+                            <div className="xp-card__bottom">
+                              <h3 className="xp-card__name">{exp.title}</h3>
+                              <p className="xp-card__meta">{exp.destination} &nbsp;·&nbsp; {formatDate(exp.date)} &nbsp;·&nbsp; {exp.groupSize} travellers</p>
+                              <p className="xp-card__tagline">{exp.tagline}</p>
+                            </div>
+                          </div>
+                        </Link>
+                      ) : (
+                        <div key={si} className="xp-card xp-card--small xp-card--empty" />
+                      ))}
+                    </div>
+                  </div>
+                )
+              })
+          }
         </div>
       </div>
 
+      {/* Swipe hint — mobile only */}
+      {isMobile && (
+        <div className={`xp-prev__swipe-hint${showSwipeHint ? ' visible' : ''}`}>
+          <span className="xp-prev__swipe-arrow">←</span>
+          <span>Swipe to explore</span>
+          <span className="xp-prev__swipe-arrow">→</span>
+        </div>
+      )}
+
       {/* Dots + arrows */}
-      {totalPages > 1 && (
+      {(isMobile ? featured.length : totalPages) > 1 && (
         <div className="xp-prev__nav">
           <button className="xp-prev__arrow-btn" onClick={() => goTo(activeDot - 1)} disabled={activeDot === 0}>←</button>
           <div className="xp-prev__dots">
-            {pages.map((_, i) => (
+            {Array.from({ length: isMobile ? featured.length : totalPages }).map((_, i) => (
               <button key={i} className={`xp-prev__dot ${i === activeDot ? 'xp-prev__dot--active' : ''}`} onClick={() => goTo(i)} />
             ))}
           </div>
-          <button className="xp-prev__arrow-btn" onClick={() => goTo(activeDot + 1)} disabled={activeDot === totalPages - 1}>→</button>
+          <button className="xp-prev__arrow-btn" onClick={() => goTo(activeDot + 1)} disabled={activeDot === (isMobile ? featured.length : totalPages) - 1}>→</button>
         </div>
       )}
 
@@ -588,6 +640,11 @@ const styles = `
 
   .xp-prev__cta:hover .xp-prev__cta-arrow { transform: translateX(5px); }
 
+  /* ── MOBILE CARD ── */
+  .xp-card--mobile {
+    display: none;
+  }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 860px) {
     .xp-prev { padding: 80px 5vw 72px; }
@@ -603,18 +660,60 @@ const styles = `
   }
 
   @media (max-width: 600px) {
-    .xp-prev__page,
-    .xp-prev__page--flip {
-      grid-template-columns: 1fr;
-      grid-template-rows: 280px 220px 220px;
+    .xp-prev { padding: 72px 0 64px; }
+
+    /* Show flat mobile cards, hide paged layout */
+    .xp-card--mobile {
+      display: block;
+      flex: 0 0 100vw;
+      min-width: 100vw;
+      max-width: 100vw;
+      height: 420px;
+      scroll-snap-align: start;
     }
 
-    .xp-prev__page--flip .xp-card--large,
-    .xp-card--large { grid-column: 1; grid-row: 1; }
+    /* Hide desktop page groups on mobile */
+    .xp-prev__page { display: none; }
 
-    .xp-prev__page--flip .xp-prev__small-stack,
-    .xp-prev__small-stack { grid-column: 1; grid-row: auto; }
+    .xp-prev__scroll {
+      padding: 0;
+      gap: 12px;
+    }
 
-    .xp-card--large .xp-card__name { font-size: 1.6rem; }
+    .xp-card--mobile .xp-card__name { font-size: 1.6rem; }
+
+    .xp-prev__swipe-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-top: 1.2rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(201,168,76,0.5);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+
+    .xp-prev__swipe-hint.visible { opacity: 1; }
+
+    .xp-prev__swipe-arrow {
+      display: inline-block;
+      animation: xp-nudge 0.9s ease-in-out infinite alternate;
+    }
+
+    .xp-prev__swipe-arrow:last-child { animation-direction: alternate-reverse; }
+
+    @keyframes xp-nudge {
+      from { transform: translateX(-4px); }
+      to   { transform: translateX(4px); }
+    }
+  }
+
+  @media (min-width: 601px) {
+    .xp-prev__swipe-hint { display: none; }
   }
 `
