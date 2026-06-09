@@ -202,6 +202,7 @@ const INIT = {
       imgs: ['https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=800&q=80','https://images.unsplash.com/photo-1606503153255-59d5e417b073?auto=format&fit=crop&w=800&q=80','https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=800&q=80'],
       fields: ['note'] },
   ],
+  experiences: [],
   about: {
     heading: 'We exist to make sure you actually go.',
     para1: "How many times have you said \"I want to travel\" and let it stay a dream? CMWG — Come Make We Go — was built as an invitation, a challenge, and a promise all at once.",
@@ -547,6 +548,8 @@ const ICON_DEST     = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14
 const ICON_SHOP     = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" style={{flexShrink:0}}><path fill="currentColor" fillRule="evenodd" d="M8 7V6a4 4 0 1 1 8 0v1h3c.552 0 1 .449 1 1.007v12.001c0 1.1-.895 1.992-1.994 1.992H5.994A1.994 1.994 0 0 1 4 20.008v-12C4 7.45 4.445 7 5 7zm1.2 0h5.6V6a2.8 2.8 0 0 0-5.6 0zM8 8.2H5.2v11.808c0 .436.356.792.794.792h12.012a.794.794 0 0 0 .794-.792V8.2H16V11h-1.2V8.2H9.2V11H8z" /></svg>
 const ICON_BOOKINGS = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" style={{flexShrink:0}}><path fill="none" stroke="currentColor" d="M7.5 6V1m10 5V1m4 16v4.5h-18v-3m17.863-10H3.352M.5 18.25v.25h17.9l.15-.25l.234-.491A28 28 0 0 0 21.5 5.729V3.5h-18v2.128A28 28 0 0 1 .743 17.744z" /></svg>
 
+const ICON_EXPERIENCES = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" style={{flexShrink:0}}><path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+
 const NAV_SECTIONS = [
   { key:'hero',         label:'Hero',         icon:ICON_HERO,     desc:'Landing section' },
   { key:'destinations', label:'Destinations', icon:ICON_DEST,     desc:'Trip listings' },
@@ -557,9 +560,10 @@ const NAV_SECTIONS = [
 ]
 
 const OPS_SECTIONS = [
-  { key:'destinations', label:'Destinations', icon:ICON_DEST,     desc:'Trip listings' },
-  { key:'merch',        label:'Shop',         icon:ICON_SHOP,     desc:'Merch catalog' },
-  { key:'bookings',     label:'Bookings',     icon:ICON_BOOKINGS, desc:'Enquiries & orders' },
+  { key:'destinations', label:'Destinations', icon:ICON_DEST,        desc:'Trip listings' },
+  { key:'experiences',  label:'Experiences',  icon:ICON_EXPERIENCES, desc:'Travel stories' },
+  { key:'merch',        label:'Shop',         icon:ICON_SHOP,        desc:'Merch catalog' },
+  { key:'bookings',     label:'Bookings',     icon:ICON_BOOKINGS,    desc:'Enquiries & orders' },
 ]
 
 const CONFIG_SECTIONS = [
@@ -710,9 +714,10 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, isTablet, i
               <p style={{ color:'#252535', fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:'0.25em', textTransform:'uppercase', marginBottom:12 }}>Quick stats</p>
               {[
                 ['Destinations', data.destinations.length, '◎'],
-                ['Merch items', data.merch.length, '✦'],
-                ['Nav links', data.navbar.links.length, '≡'],
-                ['Bookings', data.bookingCount ?? '—', '◉'],
+                ['Experiences',  data.experiences?.length ?? 0, '★'],
+                ['Merch items',  data.merch.length, '✦'],
+                ['Nav links',    data.navbar.links.length, '≡'],
+                ['Bookings',     data.bookingCount ?? '—', '◉'],
               ].map(([label, count, icon]) => (
                 <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
                   <span style={{ color:'#2e2e42', fontFamily:"'DM Mono',monospace", fontSize:10, display:'flex', alignItems:'center', gap:6 }}>
@@ -1426,6 +1431,608 @@ function MerchEditor({ data, onChange }) {
   )
 }
 
+// ─── EXPERIENCES EDITOR ───────────────────────────────────────────────────────
+
+function ExperiencesEditor({ data, onChange }) {
+  const [editing, setEditing] = useState(null)
+  const [form, setForm] = useState(null)
+  const [uploadingCover, setUploadingCover] = useState(false)
+  const [uploadingGallery, setUploadingGallery] = useState(new Set())
+  const [activeGallery, setActiveGallery] = useState(0)
+  const [galleryPlaying, setGalleryPlaying] = useState(false)
+  const galleryVideoRef = useRef(null)
+  const coverInputRef = useRef(null)
+  const galleryImgInputRef = useRef(null)
+  const galleryVidInputRef = useRef(null)
+  const galleryAddImgRef = useRef(null)
+  const galleryAddVidRef = useRef(null)
+  const thumbStripRef = useRef(null)
+  const thumbRefs = useRef({})
+
+  const openEdit = (item) => { setEditing(item.id); setForm({...item}); setActiveGallery(0); setGalleryPlaying(false) }
+  const closeEdit = () => { setEditing(null); setForm(null); setGalleryPlaying(false) }
+  const updateForm = (patch) => {
+    const updated = { ...form, ...patch }
+    setForm(updated)
+    onChange(data.map(d => String(d.id) === String(editing) ? updated : d))
+  }
+  const deleteItem = (id) => { if (String(editing) === String(id)) closeEdit(); onChange(data.filter(d=>String(d.id)!==String(id))) }
+  const addNew = () => {
+    const n = { id:Date.now(), title:'New Experience', category:'Adventure', destination:'', date:'', groupSize:0, tagline:'', story:'', featured:false, coverImage:'', coverVideo:'', gallery:[] }
+    onChange([...data, n]); openEdit(n)
+  }
+
+  const uploadFile = async (file, type='image') => {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('upload_preset', CLOUDINARY_PRESET)
+    fd.append('folder', 'cmwg/experiences')
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/${type}/upload`, { method:'POST', body:fd })
+    const d = await res.json()
+    return d.secure_url || null
+  }
+
+  const uploadFileXHR = (file, type='video') => new Promise((resolve, reject) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('upload_preset', CLOUDINARY_PRESET)
+    fd.append('folder', 'cmwg/experiences')
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/${type}/upload`)
+    xhr.onload = () => {
+      try { const d = JSON.parse(xhr.responseText); d.secure_url ? resolve(d.secure_url) : reject() }
+      catch { reject() }
+    }
+    xhr.onerror = reject
+    xhr.send(fd)
+  })
+
+  const handleCoverImage = async (file) => {
+    if (!file) return
+    setUploadingCover(true)
+    const url = await uploadFile(file, 'image').catch(()=>null)
+    setUploadingCover(false)
+    if (url) updateForm({ coverImage: url })
+  }
+
+  const setGallerySlotLoading = (i, on) => setUploadingGallery(prev => {
+    const s = new Set(prev); on ? s.add(i) : s.delete(i); return s
+  })
+
+  const handleGalleryFileAdd = async (file, fileType) => {
+    if (!file) return
+    const next = (form.gallery||[]).length
+    updateForm({ gallery: [...(form.gallery||[]), { url:'', type: fileType }] })
+    setActiveGallery(next)
+    setGallerySlotLoading(next, true)
+    setGalleryPlaying(false)
+    const uploader = fileType === 'video' ? uploadFileXHR(file,'video') : uploadFile(file,'image')
+    const url = await uploader.catch(()=>null)
+    setGallerySlotLoading(next, false)
+    if (url) {
+      setForm(prev => {
+        if (!prev) return prev
+        const gallery = [...(prev.gallery||[])]
+        gallery[next] = { url, type: fileType }
+        const updated = { ...prev, gallery }
+        onChange(data.map(d => String(d.id) === String(editing) ? updated : d))
+        return updated
+      })
+    }
+  }
+
+  const handleGalleryReplace = async (i, file, fileType) => {
+    if (!file) return
+    setGallerySlotLoading(i, true)
+    setGalleryPlaying(false)
+    const uploader = fileType === 'video' ? uploadFileXHR(file,'video') : uploadFile(file,'image')
+    const url = await uploader.catch(()=>null)
+    setGallerySlotLoading(i, false)
+    if (url) {
+      const gallery = [...(form.gallery||[])]
+      gallery[i] = { url, type: fileType }
+      updateForm({ gallery })
+    }
+  }
+
+  const removeGalleryItem = (i) => {
+    setGalleryPlaying(false)
+    const gallery = (form.gallery||[]).filter((_,idx)=>idx!==i)
+    updateForm({ gallery })
+    setActiveGallery(Math.max(0, i - 1))
+  }
+
+  const toggleGalleryPlay = () => {
+    const vid = galleryVideoRef.current
+    if (!vid) return
+    if (galleryPlaying) { vid.pause(); setGalleryPlaying(false) }
+    else { vid.play(); setGalleryPlaying(true) }
+  }
+
+  const CATS = ['Adventure','Culture','Wildlife','Beach','City','Food','Spiritual','Photography']
+
+  const EXP_ICON = (exp) => exp.featured ? '★' : '◈'
+
+  // Detect if active gallery item is a video
+  const activeGalleryItem = (form?.gallery||[])[activeGallery]
+  const activeIsVideo = activeGalleryItem?.type === 'video' || (activeGalleryItem?.url && /\.(mp4|webm|mov|ogg)(\?|$)/i.test(activeGalleryItem?.url))
+
+  return (
+    <div>
+      <SectionHeader
+        title="Experiences"
+        sub="Travel stories and trip highlights"
+        action={<button onClick={addNew} style={S.addBtn}>+ Add Experience</button>}
+      />
+
+      {editing && form && (() => {
+        const isMob = window.innerWidth < 768
+
+        const selectThumb = (i) => {
+          setActiveGallery(i)
+          setGalleryPlaying(false)
+          // Only scroll if the thumb is actually outside the visible area
+          const strip = thumbStripRef.current
+          const thumb = thumbRefs.current[i]
+          if (strip && thumb) {
+            const stripRect = strip.getBoundingClientRect()
+            const thumbRect = thumb.getBoundingClientRect()
+            const isOutLeft = thumbRect.left < stripRect.left + 8
+            const isOutRight = thumbRect.right > stripRect.right - 8
+            if (isOutLeft || isOutRight) {
+              const offset = thumbRect.left - stripRect.left + strip.scrollLeft - (stripRect.width / 2) + (thumbRect.width / 2)
+              strip.scrollTo({ left: offset, behavior: 'smooth' })
+            }
+          }
+        }
+
+        // ── Reusable thumb strip + add slots (used in both mobile and desktop right panel)
+        const thumbStripJSX = (
+          <div ref={thumbStripRef} style={{
+            display:'flex', gap:8, overflowX:'auto', paddingBottom:4,
+            scrollbarWidth:'none', msOverflowStyle:'none', flexWrap:'nowrap',
+            WebkitOverflowScrolling:'touch', scrollBehavior:'smooth',
+            touchAction:'pan-x', overscrollBehaviorX:'contain',
+          }}>
+            {(form.gallery||[]).map((item, i) => {
+              const isActive = activeGallery === i
+              const isVid = item.type === 'video' || (item.url && /\.(mp4|webm|mov|ogg)(\?|$)/i.test(item.url))
+              return (
+                <div key={i} ref={el => thumbRefs.current[i] = el} style={{
+                  flex: '0 0 68px',
+                  height: 68,
+                  position:'relative', cursor:'pointer',
+                  border:`1px solid ${isActive ? '#c9a84c' : uploadingGallery.has(i) ? 'rgba(201,168,76,.4)' : 'rgba(255,255,255,.08)'}`,
+                  borderRadius:5, overflow:'hidden',
+                  background:'#080810', transition:'border-color .2s', flexShrink:0,
+                }}
+                  onClick={() => selectThumb(i)}
+                >
+                  {uploadingGallery.has(i) ? (
+                    <div style={{ width:'100%', height:'100%', background:'rgba(255,255,255,.04)', position:'relative', overflow:'hidden' }}>
+                      <div style={{ position:'absolute', inset:0, background:'linear-gradient(90deg, transparent 0%, rgba(201,168,76,.12) 50%, transparent 100%)', animation:'adminShimmer 1.4s infinite' }} />
+                      <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <div style={{ width:16, height:16, border:'1.5px solid rgba(201,168,76,.2)', borderTop:'1.5px solid #c9a84c', borderRadius:'50%', animation:'spin .7s linear infinite' }} />
+                      </div>
+                    </div>
+                  ) : item.url ? (
+                    isVid ? (
+                      <>
+                        <video src={item.url} muted playsInline style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+                        <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,.25)' }}>
+                          <span style={{ color:'rgba(201,168,76,.8)', fontSize:12 }}>▶</span>
+                        </div>
+                      </>
+                    ) : (
+                      <img src={item.url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+                    )
+                  ) : (
+                    <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            {/* Add image */}
+            <div style={{
+              flex:'0 0 68px', height:68, flexShrink:0,
+              border:'1px dashed rgba(201,168,76,.3)', borderRadius:5, cursor:'pointer',
+              display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3,
+              background:'rgba(201,168,76,.03)', transition:'all .18s',
+            }}
+              onClick={()=>galleryAddImgRef.current?.click()}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(201,168,76,.6)';e.currentTarget.style.background='rgba(201,168,76,.07)'}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(201,168,76,.3)';e.currentTarget.style.background='rgba(201,168,76,.03)'}}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" strokeWidth="2" opacity="0.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'0.1em', color:'rgba(201,168,76,.6)' }}>+ img</span>
+              <input ref={galleryAddImgRef} type="file" accept="image/*" multiple style={{ display:'none' }}
+                onChange={e=>{ Array.from(e.target.files).forEach(f=>handleGalleryFileAdd(f,'image')); e.target.value='' }} />
+            </div>
+            {/* Add video */}
+            <div style={{
+              flex:'0 0 68px', height:68, flexShrink:0,
+              border:'1px dashed rgba(201,168,76,.2)', borderRadius:5, cursor:'pointer',
+              display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3,
+              background:'rgba(201,168,76,.02)', transition:'all .18s',
+            }}
+              onClick={()=>galleryAddVidRef.current?.click()}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(201,168,76,.5)';e.currentTarget.style.background='rgba(201,168,76,.06)'}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(201,168,76,.2)';e.currentTarget.style.background='rgba(201,168,76,.02)'}}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" strokeWidth="2" opacity="0.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:7, letterSpacing:'0.1em', color:'rgba(201,168,76,.5)' }}>+ vid</span>
+              <input ref={galleryAddVidRef} type="file" accept="video/*" style={{ display:'none' }}
+                onChange={e=>{ handleGalleryFileAdd(e.target.files[0],'video'); e.target.value='' }} />
+            </div>
+          </div>
+        )
+
+        return (
+          <div onClick={e=>{ if(e.target===e.currentTarget) closeEdit() }} style={{
+            position:'fixed', inset:0, zIndex:500,
+            background:'rgba(0,0,0,.75)', backdropFilter:'blur(6px)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            padding: isMob ? 0 : '20px',
+            animation:'fadeIn .2s ease',
+          }}>
+            <div style={{
+              width:'100%', maxWidth: isMob ? '100%' : 1100,
+              height: isMob ? '100dvh' : 'min(92vh, 820px)',
+              background:'linear-gradient(145deg,#0c0c14,#080810)',
+              border: isMob ? 'none' : '1px solid rgba(201,168,76,.2)',
+              borderRadius: isMob ? 0 : 14,
+              display:'flex', flexDirection:'column',
+              boxShadow:'0 40px 100px rgba(0,0,0,.8), 0 0 0 1px rgba(201,168,76,.05)',
+              overflow:'hidden',
+            }}>
+              {/* Modal header */}
+              <div style={{
+                display:'flex', alignItems:'center', justifyContent:'space-between',
+                padding:'16px 24px', borderBottom:'1px solid rgba(255,255,255,.05)', flexShrink:0,
+              }}>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <div style={{ width:3, height:18, background:'#c9a84c', borderRadius:2 }} />
+                  <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.2em', color:'#c9a84c', textTransform:'uppercase' }}>
+                    Editing — {form.title}
+                  </span>
+                </div>
+                <button onClick={closeEdit} style={{
+                  background:'transparent', border:'1px solid rgba(255,255,255,.08)',
+                  color:'#555', width:28, height:28, borderRadius:6,
+                  cursor:'pointer', fontSize:12, display:'flex', alignItems:'center', justifyContent:'center',
+                  transition:'all .15s',
+                }}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(244,67,54,.4)';e.currentTarget.style.color='#e57373'}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.08)';e.currentTarget.style.color='#555'}}
+                >✕</button>
+              </div>
+
+              {/* Two-column body */}
+              <div style={{
+                flex:1, minHeight:0,
+                display:'flex', flexDirection: isMob ? 'column' : 'row',
+              }}>
+
+                {/* ── LEFT: form ── */}
+                <div style={{
+                  flex: isMob ? '1 1 auto' : '0 0 420px',
+                  overflowY:'auto', padding:'24px',
+                  borderRight: isMob ? 'none' : '1px solid rgba(255,255,255,.05)',
+                  minWidth:0,
+                }}>
+                  <div style={S.grid2}>
+                    <Field label="Title" value={form.title} onChange={v=>updateForm({title:v})} />
+                    <div style={{ marginBottom:16 }}>
+                      <label style={{ display:'block', fontSize:9, letterSpacing:'0.22em', color:'#3a3a50', textTransform:'uppercase', marginBottom:6, fontFamily:"'DM Mono',monospace" }}>Category</label>
+                      <select value={form.category} onChange={e=>updateForm({category:e.target.value})} style={{
+                        width:'100%', background:'#090910', border:'1px solid #1a1a28',
+                        borderRadius:7, color:'#d8d0c8', fontFamily:"'DM Mono',monospace",
+                        fontSize:12, padding:'10px 12px', outline:'none', cursor:'pointer',
+                      }}>
+                        {CATS.map(c=><option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div style={S.grid2}>
+                    <Field label="Destination" value={form.destination} onChange={v=>updateForm({destination:v})} placeholder="e.g. Lagos, Nigeria" />
+                    <Field label="Date" value={form.date} onChange={v=>updateForm({date:v})} placeholder="e.g. March 2025" />
+                  </div>
+                  <div style={S.grid2}>
+                    <Field label="Group size" value={String(form.groupSize||'')} onChange={v=>updateForm({groupSize:Number(v)||0})} placeholder="e.g. 12" />
+                    <div style={{ marginBottom:16, display:'flex', alignItems:'center', gap:12, paddingTop:22 }}>
+                      <button
+                        onClick={()=>updateForm({featured:!form.featured})}
+                        style={{
+                          display:'flex', alignItems:'center', gap:8,
+                          background: form.featured ? 'rgba(201,168,76,.12)' : 'transparent',
+                          border:`1px solid ${form.featured ? 'rgba(201,168,76,.4)' : 'rgba(255,255,255,.1)'}`,
+                          color: form.featured ? '#c9a84c' : '#555',
+                          padding:'8px 16px', borderRadius:7, cursor:'pointer',
+                          fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.1em',
+                          transition:'all .15s',
+                        }}
+                      >
+                        <span>{form.featured ? '★' : '☆'}</span>
+                        Featured
+                      </button>
+                    </div>
+                  </div>
+                  <Field label="Tagline" value={form.tagline} onChange={v=>updateForm({tagline:v})} placeholder="One line that captures the moment" />
+                  <Field label="Story / Description" value={form.story} onChange={v=>updateForm({story:v})} rows={5} placeholder="Tell the full story of this experience..." />
+
+                  {/* Cover image */}
+                  <div style={S.subHead}><span>◎</span> Cover Image</div>
+                  <div style={{ marginBottom:16 }}>
+                    <div style={{
+                      position:'relative', width:'100%', height:160,
+                      background:'#080810', border:'1px solid rgba(255,255,255,.07)',
+                      borderRadius:8, overflow:'hidden', marginBottom:8,
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                    }}>
+                      {uploadingCover ? (
+                        <div style={{ position:'absolute', inset:0, background:'rgba(255,255,255,.03)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:10 }}>
+                          <div style={{ width:24, height:24, border:'2px solid rgba(201,168,76,.15)', borderTop:'2px solid #c9a84c', borderRadius:'50%', animation:'spin .7s linear infinite' }} />
+                          <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.2em', color:'rgba(201,168,76,.5)' }}>Uploading…</span>
+                        </div>
+                      ) : form.coverImage ? (
+                        <img src={form.coverImage} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                      ) : (
+                        <div style={{ opacity:0.2, display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                          <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9 }}>No cover image</span>
+                        </div>
+                      )}
+                      <div style={{ position:'absolute', top:8, right:8, display:'flex', gap:6 }}>
+                        <button onClick={()=>coverInputRef.current?.click()} style={{
+                          background:'rgba(0,0,0,.7)', border:'1px solid rgba(201,168,76,.35)',
+                          color:'rgba(201,168,76,.8)', width:26, height:26, borderRadius:5,
+                          cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                        }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </button>
+                        {form.coverImage && (
+                          <button onClick={()=>updateForm({coverImage:''})} style={{
+                            background:'rgba(0,0,0,.7)', border:'1px solid rgba(244,67,54,.3)',
+                            color:'rgba(244,67,54,.7)', width:26, height:26, borderRadius:5,
+                            cursor:'pointer', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center',
+                          }}>✕</button>
+                        )}
+                      </div>
+                    </div>
+                    <input ref={coverInputRef} type="file" accept="image/*" style={{ display:'none' }}
+                      onChange={e=>{ handleCoverImage(e.target.files[0]); e.target.value='' }} />
+                    <Field label="Or paste image URL" value={form.coverImage||''} onChange={v=>updateForm({coverImage:v})} placeholder="https://..." />
+                  </div>
+
+                  {/* Cover video */}
+                  <CloudinaryVideoUpload label="Cover Video (optional)" value={form.coverVideo||''} onChange={v=>updateForm({coverVideo:v})} />
+
+                  {/* Mobile: show thumb strip inline after form */}
+                  {isMob && (
+                    <>
+                      <div style={S.subHead}><span>⬡</span> Gallery</div>
+                      <div style={{ marginBottom:20 }}>
+                        {thumbStripJSX}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* ── RIGHT: gallery panel (desktop only) ── */}
+                {!isMob && (
+                  <div style={{
+                    flex:1, minWidth:0,
+                    display:'flex', flexDirection:'column',
+                    background:'rgba(0,0,0,.15)',
+                  }}>
+                    {/* Panel header */}
+                    <div style={{
+                      padding:'14px 20px 10px',
+                      borderBottom:'1px solid rgba(255,255,255,.04)',
+                      flexShrink:0,
+                    }}>
+                      <span style={{ ...S.subHead, margin:0 }}><span>⬡</span> Gallery</span>
+                    </div>
+
+                    {/* Primary viewer — fills remaining height */}
+                    <div style={{ flex:1, minHeight:0, padding:'16px 20px 10px', display:'flex', flexDirection:'column', gap:10 }}>
+                      <div style={{
+                        flex:1, minHeight:0,
+                        position:'relative',
+                        background:'#080810', border:'1px solid rgba(255,255,255,.07)',
+                        borderRadius:8, overflow:'hidden',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                      }}>
+                        {uploadingGallery.has(activeGallery) ? (
+                          <div style={{ position:'absolute', inset:0, background:'rgba(255,255,255,.03)', overflow:'hidden' }}>
+                            <div style={{ position:'absolute', inset:0, background:'linear-gradient(90deg, transparent 0%, rgba(201,168,76,.08) 50%, transparent 100%)', animation:'adminShimmer 1.4s infinite' }} />
+                            <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12 }}>
+                              <div style={{ width:28, height:28, border:'2px solid rgba(201,168,76,.15)', borderTop:'2px solid #c9a84c', borderRadius:'50%', animation:'spin .7s linear infinite' }} />
+                              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.2em', color:'rgba(201,168,76,.5)', textTransform:'uppercase' }}>Uploading…</span>
+                            </div>
+                          </div>
+                        ) : activeGalleryItem?.url ? (
+                          activeIsVideo ? (
+                            <video
+                              ref={galleryVideoRef}
+                              key={activeGalleryItem.url}
+                              src={activeGalleryItem.url}
+                              muted loop playsInline
+                              onPlay={()=>setGalleryPlaying(true)}
+                              onPause={()=>setGalleryPlaying(false)}
+                              style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                            />
+                          ) : (
+                            <img src={activeGalleryItem.url} alt="" style={{ width:'100%', height:'100%', objectFit:'contain' }} />
+                          )
+                        ) : (
+                          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, opacity:0.15 }}>
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                            <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.15em', color:'#c9a84c' }}>No media selected</span>
+                          </div>
+                        )}
+
+                        {/* Play/pause — centred button only, no full-area overlay */}
+                        {activeIsVideo && activeGalleryItem?.url && !uploadingGallery.has(activeGallery) && (
+                          <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' }}>
+                            <button onClick={toggleGalleryPlay} style={{
+                              width:48, height:48, borderRadius:'50%',
+                              background: galleryPlaying ? 'rgba(0,0,0,.4)' : 'rgba(0,0,0,.65)',
+                              border:`1px solid ${galleryPlaying ? 'rgba(201,168,76,.3)' : 'rgba(201,168,76,.55)'}`,
+                              display:'flex', alignItems:'center', justifyContent:'center',
+                              cursor:'pointer', pointerEvents:'all', transition:'all .15s',
+                            }}>
+                              {galleryPlaying
+                                ? <span style={{ color:'#c9a84c', fontSize:14, letterSpacing:2 }}>⏸</span>
+                                : <span style={{ color:'#c9a84c', fontSize:17, marginLeft:3 }}>▶</span>
+                              }
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Top-right upload/delete */}
+                        {!uploadingGallery.has(activeGallery) && (form.gallery||[]).length > 0 && (
+                          <div style={{ position:'absolute', top:8, right:8, display:'flex', gap:6 }}>
+                            {!activeIsVideo && (
+                              <>
+                                <button onClick={()=>galleryImgInputRef.current?.click()} style={{
+                                  background:'rgba(0,0,0,.7)', border:'1px solid rgba(201,168,76,.35)',
+                                  color:'rgba(201,168,76,.8)', width:26, height:26, borderRadius:5,
+                                  cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                                }}
+                                  onMouseEnter={e=>{e.currentTarget.style.color='#c9a84c';e.currentTarget.style.borderColor='rgba(201,168,76,.7)'}}
+                                  onMouseLeave={e=>{e.currentTarget.style.color='rgba(201,168,76,.8)';e.currentTarget.style.borderColor='rgba(201,168,76,.35)'}}>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                </button>
+                                <input ref={galleryImgInputRef} type="file" accept="image/*" style={{ display:'none' }}
+                                  onChange={e=>{ handleGalleryReplace(activeGallery, e.target.files[0], 'image'); e.target.value='' }} />
+                              </>
+                            )}
+                            {activeIsVideo && (
+                              <>
+                                <button onClick={()=>galleryVidInputRef.current?.click()} style={{
+                                  background:'rgba(0,0,0,.7)', border:'1px solid rgba(201,168,76,.35)',
+                                  color:'rgba(201,168,76,.8)', width:26, height:26, borderRadius:5,
+                                  cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                                }}
+                                  onMouseEnter={e=>{e.currentTarget.style.color='#c9a84c';e.currentTarget.style.borderColor='rgba(201,168,76,.7)'}}
+                                  onMouseLeave={e=>{e.currentTarget.style.color='rgba(201,168,76,.8)';e.currentTarget.style.borderColor='rgba(201,168,76,.35)'}}>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                </button>
+                                <input ref={galleryVidInputRef} type="file" accept="video/*" style={{ display:'none' }}
+                                  onChange={e=>{ handleGalleryReplace(activeGallery, e.target.files[0], 'video'); e.target.value='' }} />
+                              </>
+                            )}
+                            {activeGalleryItem?.url && (
+                              <button onClick={()=>removeGalleryItem(activeGallery)} style={{
+                                background:'rgba(0,0,0,.7)', border:'1px solid rgba(244,67,54,.3)',
+                                color:'rgba(244,67,54,.7)', width:26, height:26, borderRadius:5,
+                                cursor:'pointer', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center',
+                              }}
+                                onMouseEnter={e=>{e.currentTarget.style.color='#e57373';e.currentTarget.style.borderColor='rgba(244,67,54,.6)'}}
+                                onMouseLeave={e=>{e.currentTarget.style.color='rgba(244,67,54,.7)';e.currentTarget.style.borderColor='rgba(244,67,54,.3)'}}>✕</button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Counter badge */}
+                        {(form.gallery||[]).length > 0 && (
+                          <div style={{ position:'absolute', bottom:8, left:8, background:'rgba(0,0,0,.6)', border:'1px solid rgba(255,255,255,.08)', borderRadius:4, padding:'2px 8px' }}>
+                            <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, color:'#555', letterSpacing:'0.1em' }}>
+                              {activeGallery + 1} / {(form.gallery||[]).length}
+                              {activeIsVideo && <span style={{ color:'rgba(201,168,76,.6)', marginLeft:6 }}>▶ video</span>}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Thumb strip */}
+                      <div style={{ flexShrink:0, paddingBottom:4 }}>
+                        {thumbStripJSX}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal footer */}
+              <div style={{
+                padding:'12px 24px', borderTop:'1px solid rgba(255,255,255,.05)',
+                display:'flex', justifyContent:'flex-end', flexShrink:0,
+                background:'rgba(0,0,0,.2)',
+              }}>
+                <button onClick={closeEdit} style={{
+                  background:'linear-gradient(135deg,#c9a84c,#e8c96a)',
+                  border:'none', color:'#060608',
+                  padding:'9px 28px', borderRadius:7, cursor:'pointer',
+                  fontFamily:"'DM Mono',monospace", fontSize:10, fontWeight:700,
+                  letterSpacing:'0.14em', textTransform:'uppercase',
+                  boxShadow:'0 4px 16px rgba(201,168,76,.3)',
+                }}>Done</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* List */}
+      <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+        {(!data || data.length === 0) && (
+          <div style={{ textAlign:'center', padding:'48px 0', color:'#2a2a38', fontFamily:"'DM Mono',monospace", fontSize:11, letterSpacing:'0.14em' }}>
+            No experiences yet — add your first travel story
+          </div>
+        )}
+        {(data||[]).map((exp, idx) => (
+          <div key={exp.id} style={{
+            ...S.card,
+            display:'flex', alignItems:'center',
+            gap:14, minWidth:0, overflow:'hidden',
+          }}>
+            {/* Thumbnail */}
+            {exp.coverImage
+              ? <img src={exp.coverImage} alt="" style={{ width:72, height:48, objectFit:'cover', borderRadius:6, flexShrink:0 }} onError={e=>e.target.style.display='none'} />
+              : <div style={{ width:72, height:48, borderRadius:6, background:'rgba(255,255,255,.03)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <span style={{ color:'#2a2a38', fontSize:18 }}>★</span>
+                </div>
+            }
+            {/* Info */}
+            <div style={{ flex:1, minWidth:0, overflow:'hidden' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                <p style={{ color:'#e8e0d0', fontSize:13, fontWeight:500, margin:0, fontFamily:"'DM Sans',sans-serif", whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{exp.title}</p>
+                {exp.featured && <span style={{ fontSize:9, letterSpacing:'0.1em', color:'#c9a84c', background:'rgba(201,168,76,.1)', border:'1px solid rgba(201,168,76,.25)', padding:'2px 7px', borderRadius:4, fontFamily:"'DM Mono',monospace", flexShrink:0 }}>Featured</span>}
+              </div>
+              <p style={{ color:'#3a3a50', fontSize:11, margin:'3px 0 0', fontFamily:"'DM Mono',monospace", whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                {[exp.category, exp.destination, exp.date].filter(Boolean).join(' · ')}
+              </p>
+            </div>
+            {/* Gallery count badge */}
+            {exp.gallery?.length > 0 && (
+              <span style={{ fontSize:9, color:'#444', background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.07)', padding:'3px 8px', borderRadius:4, fontFamily:"'DM Mono',monospace", flexShrink:0 }}>
+                ⬡ {exp.gallery.length}
+              </span>
+            )}
+            {/* Actions */}
+            <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+              <button onClick={()=>openEdit(exp)} style={S.editBtn}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.15)';e.currentTarget.style.color='#aaa'}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.07)';e.currentTarget.style.color='#666'}}>
+                Edit
+              </button>
+              <button onClick={()=>deleteItem(exp.id)} style={S.delBtn}
+                onMouseEnter={e=>{e.currentTarget.style.color='#e57373';e.currentTarget.style.borderColor='rgba(244,67,54,.4)'}}
+                onMouseLeave={e=>{e.currentTarget.style.color='rgba(244,67,54,.5)';e.currentTarget.style.borderColor='rgba(244,67,54,.15)'}}>
+                ✕
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── ABOUT EDITOR ─────────────────────────────────────────────────────────────
 
 function AboutEditor({ data, onChange }) {
@@ -2095,6 +2702,26 @@ function PreviewPanel({ active, data }) {
         </div>
       )}
 
+      {active==='experiences' && (
+        <div>
+          {(!data.experiences || data.experiences.length === 0) && (
+            <p style={{ color:'#2a2a38', fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.12em' }}>No experiences yet</p>
+          )}
+          {(data.experiences||[]).map(exp => (
+            <div key={exp.id} style={{ marginBottom:14 }}>
+              {exp.coverImage && <div style={{ borderRadius:7, overflow:'hidden', height:60, marginBottom:6 }}>
+                <img src={exp.coverImage} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>e.target.style.display='none'} />
+              </div>}
+              <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+                <p style={{ color:'#e8e0d0', fontSize:11, fontWeight:500, margin:0, fontFamily:"'DM Sans',sans-serif", flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{exp.title}</p>
+                {exp.featured && <span style={{ color:'#c9a84c', fontSize:9 }}>★</span>}
+              </div>
+              <p style={{ color:'#3a3a50', fontSize:10, margin:0, fontFamily:"'DM Mono',monospace" }}>{exp.category}{exp.destination ? ` · ${exp.destination}` : ''}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {active==='merch' && (
         <div>
           {data.merch.map(m => (
@@ -2208,12 +2835,14 @@ function AdminPage({ activeUser, onLogout }) {
     Promise.all([
       fetch(`${SCRIPT_URL}?t=${Date.now()}`).then(r=>r.json()),
       fetch(`${SCRIPT_URL}?type=merch&t=${Date.now()}`).then(r=>r.json()),
+      fetch(`${SCRIPT_URL}?type=experiences&t=${Date.now()}`).then(r=>r.json()),
     ])
-      .then(([destRes, merchRes]) => {
+      .then(([destRes, merchRes, expRes]) => {
         setData(prev => ({
           ...prev,
           ...(destRes.data?.length ? { destinations: destRes.data.map(d=>({...d,id:Number(d.id)||Date.now()})) } : {}),
           ...(merchRes.data?.length ? { merch: merchRes.data.map(m=>({...m,id:Number(m.id)||Date.now()})) } : {}),
+          ...(expRes.data?.length   ? { experiences: expRes.data.map(e=>({...e,id:Number(e.id)||Date.now()})) } : {}),
         }))
       })
       .catch(()=>{})
@@ -2227,6 +2856,7 @@ function AdminPage({ activeUser, onLogout }) {
       await Promise.all([
         fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({ type:'save_destinations', destinations:data.destinations }) }),
         fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({ type:'save_merch', merch:data.merch.map(m=>({...m,imgs:(m.imgs||[]).filter(Boolean)})) }) }),
+        fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({ type:'save_experiences', experiences:data.experiences }) }),
       ])
       showToast('Changes saved successfully ✓')
       setDirty(false)
@@ -2406,6 +3036,7 @@ function AdminPage({ activeUser, onLogout }) {
         }}>
           {active==='hero' && (activeUser === 'bibitayouthman' ? <HeroEditor data={data.hero} onChange={upd('hero')} /> : <ComingSoonGate section="Hero"><HeroEditor data={data.hero} onChange={upd('hero')} /></ComingSoonGate>)}
           {active==='destinations' && <DestinationsEditor data={data.destinations} onChange={upd('destinations')} />}
+          {active==='experiences' && <ExperiencesEditor data={data.experiences} onChange={upd('experiences')} />}
           {active==='merch' && <MerchEditor data={data.merch} onChange={upd('merch')} />}
           {active==='about' && (activeUser === 'bibitayouthman' ? <AboutEditor data={data.about} onChange={upd('about')} /> : <ComingSoonGate section="About"><AboutEditor data={data.about} onChange={upd('about')} /></ComingSoonGate>)}
           {active==='navbar' && (activeUser === 'bibitayouthman' ? <NavbarEditor data={data.navbar} onChange={upd('navbar')} /> : <ComingSoonGate section="Navbar"><NavbarEditor data={data.navbar} onChange={upd('navbar')} /></ComingSoonGate>)}

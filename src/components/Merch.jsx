@@ -280,6 +280,13 @@ export default function Merch() {
     el.scrollLeft = drag.current.scrollLeft - walk
   }
 
+  const goTo = (dir) => {
+    const el = scrollRef.current
+    if (!el) return
+    const cardWidth = el.querySelector('.merch__card')?.offsetWidth || 300
+    el.scrollBy({ left: dir * (cardWidth + 19), behavior: 'smooth' })
+  }
+
   return (
     <section className="merch" id="shop">
 
@@ -360,15 +367,19 @@ export default function Merch() {
         </div>
       )}
 
-      {/* SCROLL DOTS */}
+      {/* SCROLL DOTS + ARROWS */}
       {dotCount > 1 && (
         <div className="merch__dots">
-          {Array.from({ length: dotCount }).map((_, i) => (
-            <div
-              key={i}
-              className={`merch__dot${activeDot === i ? ' active' : ''}`}
-            />
-          ))}
+          <button className="merch__arrow-btn" onClick={() => goTo(-1)} disabled={activeDot === 0}>←</button>
+          <div className="merch__dot-track">
+            {Array.from({ length: dotCount }).map((_, i) => (
+              <div
+                key={i}
+                className={`merch__dot${activeDot === i ? ' active' : ''}`}
+              />
+            ))}
+          </div>
+          <button className="merch__arrow-btn" onClick={() => goTo(1)} disabled={activeDot === dotCount - 1}>→</button>
         </div>
       )}
 
@@ -941,13 +952,57 @@ export default function Merch() {
           animation: merch-shimmer 1.6s infinite;
         }
 
-        /* SCROLL DOTS */
+        /* ARROW NAV */
+        .merch__track {
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: 0;
+        }
+
+        .merch__arrow {
+          flex-shrink: 0;
+          width: 42px;
+          height: 42px;
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.12);
+          color: rgba(255,255,255,0.45);
+          font-size: 1rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: border-color 0.2s, color 0.2s, background 0.2s;
+          z-index: 2;
+          flex-shrink: 0;
+        }
+
+        .merch__arrow:hover {
+          border-color: rgba(201,168,76,0.5);
+          color: #c9a84c;
+          background: rgba(201,168,76,0.06);
+        }
+
+        .merch__arrow--prev { margin-right: 0.75rem; }
+        .merch__arrow--next { margin-left: 0.75rem; }
+
+        @media (max-width: 767px) {
+          .merch__arrow { display: none; }
+        }
+
+        /* SCROLL DOTS + ARROWS */
         .merch__dots {
           display: flex;
           justify-content: center;
           align-items: center;
-          gap: 0.45rem;
+          gap: 1.2rem;
           margin-top: 1.8rem;
+        }
+
+        .merch__dot-track {
+          display: flex;
+          align-items: center;
+          gap: 0.45rem;
         }
 
         .merch__dot {
@@ -964,6 +1019,29 @@ export default function Merch() {
           border-radius: 3px;
           background: #c9a84c;
         }
+
+        .merch__arrow-btn {
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.12);
+          color: rgba(255,255,255,0.4);
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 0.85rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: border-color 0.2s, color 0.2s;
+          flex-shrink: 0;
+        }
+
+        .merch__arrow-btn:hover:not(:disabled) {
+          border-color: rgba(201,168,76,0.5);
+          color: #c9a84c;
+        }
+
+        .merch__arrow-btn:disabled { opacity: 0.2; cursor: default; }
 
         @keyframes merch-shimmer {
           0%   { transform: translateX(-100%); }

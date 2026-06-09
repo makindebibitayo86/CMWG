@@ -3,140 +3,6 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
 const FORMSPREE_URL = 'https://formspree.io/f/xqeopbeb'
 
-const FALLBACK_PLACES = [
-  {
-    title: 'Lagos City Escape',
-    desc: 'Urban energy, beaches, nightlife',
-    img: 'https://res.cloudinary.com/dgjcl0te0/image/upload/q_auto/f_auto/v1780581204/lagos_bo1dux.png',
-    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/lagos.mp4',
-    category: 'City',
-    highlights: ['Lekki Beach', 'Victoria Island', 'Afrobeats nightlife', 'Street food culture'],
-    bestTime: 'Nov – Feb',
-    duration: '3–5 days',
-    tagline: 'Africa\'s most electric city — where hustle meets the ocean.',
-  },
-  {
-    title: 'Ghana Heritage Journey',
-    desc: 'Culture, history, and coastal rhythm',
-    img: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80',
-    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/ghana.mp4',
-    category: 'Culture',
-    highlights: ['Cape Coast Castle', 'Kakum Canopy Walk', 'Ashanti Kingdom', 'Accra Markets'],
-    bestTime: 'Oct – Mar',
-    duration: '5–7 days',
-    tagline: 'Walk through centuries of history along the Gold Coast.',
-  },
-  {
-    title: 'Benin Royal Experience',
-    desc: 'Ancient kingdoms and rich traditions',
-    img: 'https://res.cloudinary.com/dgjcl0te0/image/upload/v1780581557/benin_rihdlk.jpg',
-    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/benin.mp4',
-    category: 'Culture',
-    highlights: ['Royal Palace Museum', 'Bronze artworks', 'Voodoo ceremonies', 'Ouidah Temple'],
-    bestTime: 'Dec – Apr',
-    duration: '4–6 days',
-    tagline: 'The cradle of royal art, ceremony, and ancient power.',
-  },
-  {
-    title: 'Tanzania Safari Expedition',
-    desc: 'Wildlife, savannahs, and national parks',
-    img: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=80',
-    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/tanzania.mp4',
-    category: 'Safari',
-    highlights: ['Serengeti Migration', 'Ngorongoro Crater', 'Mount Kilimanjaro', 'Maasai Villages'],
-    bestTime: 'Jun – Oct',
-    duration: '7–10 days',
-    tagline: 'Witness the greatest wildlife spectacle on earth.',
-  },
-  {
-    title: 'Cape Town Coastline',
-    desc: 'Mountains meeting the ocean',
-    img: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
-    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/capetown.mp4',
-    category: 'Beach',
-    highlights: ['Table Mountain', 'Boulders Penguin Colony', 'Cape Winelands', 'Clifton Beaches'],
-    bestTime: 'Oct – Apr',
-    duration: '5–8 days',
-    tagline: 'Where dramatic peaks dissolve into two oceans.',
-  },
-  {
-    title: 'Zanzibar Escape',
-    desc: 'Turquoise waters and island calm',
-    img: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80',
-    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/zanzibar.mp4',
-    category: 'Beach',
-    highlights: ['Stone Town UNESCO Site', 'Mnemba Atoll Diving', 'Spice Plantations', 'Nungwi Beach'],
-    bestTime: 'Jun – Oct',
-    duration: '4–7 days',
-    tagline: 'Ivory sands, clove-scented breeze, and infinite blue.',
-  },
-  {
-    title: 'Sahara Desert Ride',
-    desc: 'Golden dunes and endless horizons',
-    img: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80',
-    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/sahara.mp4',
-    category: 'Safari',
-    highlights: ['Erg Chebbi Dunes', 'Camel Trekking', 'Berber Camps', 'Stargazing Nights'],
-    bestTime: 'Oct – Apr',
-    duration: '3–5 days',
-    tagline: 'Lose yourself in the oldest silence on the planet.',
-  },
-  {
-    title: 'Nairobi Safari Hub',
-    desc: 'Wildlife parks and city nature blend',
-    img: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
-    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/nairobi.mp4',
-    category: 'Safari',
-    highlights: ['Nairobi National Park', 'Giraffe Centre', 'Karen Blixen Museum', 'David Sheldrick'],
-    bestTime: 'Jul – Sep',
-    duration: '3–5 days',
-    tagline: 'The only city where lions roam beside the skyline.',
-  },
-  {
-    title: 'Victoria Falls Wonder',
-    desc: 'One of the world\'s greatest waterfalls',
-    img: 'https://images.unsplash.com/photo-1587502537745-84b86da1204f?auto=format&fit=crop&w=1200&q=80',
-    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/victoriafalls.mp4',
-    category: 'Safari',
-    highlights: ['Devil\'s Pool Swim', 'Bungee Jumping', 'Sunset Cruise', 'Rainforest Walk'],
-    bestTime: 'Feb – May',
-    duration: '3–4 days',
-    tagline: 'Stand at the edge of the world\'s most thunderous curtain.',
-  },
-  {
-    title: 'Dakar Atlantic Coast',
-    desc: 'Surf culture and ocean winds',
-    img: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80',
-    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/dakar.mp4',
-    category: 'Beach',
-    highlights: ['Île de Gorée', 'Lac Rose', 'IFAN Museum', 'Yoff Beach Surfing'],
-    bestTime: 'Nov – May',
-    duration: '4–6 days',
-    tagline: 'Where the Atlantic meets the soul of West Africa.',
-  },
-  {
-    title: 'Morocco Imperial Cities',
-    desc: 'Souks, riads, and desert gateways',
-    img: 'https://images.unsplash.com/photo-1539020140153-e479b8c22e70?auto=format&fit=crop&w=1200&q=80',
-    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/q_auto/f_auto/v1780579385/morocco_dzgd1a.mp4',
-    category: 'Culture',
-    highlights: ['Marrakech Medina', 'Fes el-Bali', 'Sahara Desert Edge', 'Atlas Mountains'],
-    bestTime: 'Mar – May',
-    duration: '6–9 days',
-    tagline: 'A labyrinth of colour, spice, and a thousand years of history.',
-  },
-  {
-    title: 'Dubai City & Desert',
-    desc: 'Skyline excess meets ancient sands',
-    img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
-    video: 'https://res.cloudinary.com/dgjcl0te0/video/upload/q_auto/f_auto/v1780579462/dubai_ce9kty.mp4',
-    category: 'City',
-    highlights: ['Burj Khalifa', 'Desert Safari', 'Gold & Spice Souks', 'Palm Jumeirah'],
-    bestTime: 'Nov – Mar',
-    duration: '4–6 days',
-    tagline: 'Where the future was built overnight on top of ancient desert.',
-  },
-]
 
 function BookingForm({ destination, onClose }) {
   const [submitted, setSubmitted] = useState(false)
@@ -357,7 +223,7 @@ export default function Destinations() {
   const videoRefs = useRef({})
   const [activeCategory, setActiveCategory] = useState('All')
   const [activeModal, setActiveModal] = useState(null)
-  const [places, setPlaces] = useState(FALLBACK_PLACES)
+  const [places, setPlaces] = useState([])
   const [loadingPlaces, setLoadingPlaces] = useState(true)
   const [fetchError, setFetchError] = useState(null)
   const [isMobile, setIsMobile] = useState(false)
@@ -377,7 +243,6 @@ export default function Destinations() {
       .then(res => res.json())
       .then(({ data }) => {
         if (Array.isArray(data) && data.length > 0) {
-          // Normalise highlights: Sheet may send a pipe-separated string
           const normalised = data.map(d => ({
             ...d,
             highlights: typeof d.highlights === 'string'
@@ -385,9 +250,11 @@ export default function Destinations() {
               : d.highlights || [],
           }))
           setPlaces(normalised)
+        } else {
+          setFetchError('No destinations found. Please check the sheet.')
         }
       })
-      .catch(() => setFetchError('Could not load destinations from Sheet — showing defaults.'))
+      .catch(() => setFetchError('Failed to load destinations. Please check your connection.'))
       .finally(() => setLoadingPlaces(false))
   }, [])
 
@@ -409,6 +276,13 @@ export default function Destinations() {
     if (max <= 0) { setActiveDot(0); return }
     const idx = Math.round((el.scrollLeft / max) * (dotCount - 1))
     setActiveDot(Math.min(idx, dotCount - 1))
+  }
+
+  const scrollByCard = (dir) => {
+    const el = scrollRef.current
+    if (!el) return
+    const cardWidth = el.querySelector('.card')?.offsetWidth || 380
+    el.scrollBy({ left: dir * (cardWidth + 8), behavior: 'smooth' })
   }
 
   const drag = useRef({ isDown: false, startX: 0, scrollLeft: 0, velocity: 0, frame: null })
@@ -475,7 +349,7 @@ export default function Destinations() {
       </div>
 
       {fetchError && (
-        <p style={{ color: '#c9a84c', fontSize: '0.8rem', marginBottom: '1rem', opacity: 0.7 }}>
+        <p style={{ color: 'rgba(220,80,80,0.75)', fontSize: '0.8rem', marginBottom: '1rem', letterSpacing: '0.04em' }}>
           {fetchError}
         </p>
       )}
@@ -500,6 +374,12 @@ export default function Destinations() {
                 </div>
               </div>
             ))
+          : filtered.length === 0
+          ? (
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', padding: '2rem 0' }}>
+                No destinations to show.
+              </p>
+            )
           : filtered.map((place) => (
           <div
             key={place.title}
@@ -539,15 +419,19 @@ export default function Destinations() {
         </div>
       )}
 
-      {/* SCROLL DOTS */}
+      {/* SCROLL DOTS + ARROWS */}
       {dotCount > 1 && (
         <div className="dest__dots">
-          {Array.from({ length: dotCount }).map((_, i) => (
-            <div
-              key={i}
-              className={`dest__dot${activeDot === i ? ' active' : ''}`}
-            />
-          ))}
+          <button className="dest__arrow-btn" onClick={() => scrollByCard(-1)} disabled={activeDot === 0}>←</button>
+          <div className="dest__dot-track">
+            {Array.from({ length: dotCount }).map((_, i) => (
+              <div
+                key={i}
+                className={`dest__dot${activeDot === i ? ' active' : ''}`}
+              />
+            ))}
+          </div>
+          <button className="dest__arrow-btn" onClick={() => scrollByCard(1)} disabled={activeDot === dotCount - 1}>→</button>
         </div>
       )}
 
@@ -1192,8 +1076,14 @@ export default function Destinations() {
           display: flex;
           justify-content: center;
           align-items: center;
-          gap: 0.45rem;
+          gap: 1.2rem;
           margin-top: 1.8rem;
+        }
+
+        .dest__dot-track {
+          display: flex;
+          align-items: center;
+          gap: 0.45rem;
         }
 
         .dest__dot {
@@ -1209,6 +1099,32 @@ export default function Destinations() {
           width: 22px;
           border-radius: 3px;
           background: #c9a84c;
+        }
+
+        .dest__arrow-btn {
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.12);
+          color: rgba(255,255,255,0.4);
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 0.85rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: border-color 0.2s, color 0.2s;
+          flex-shrink: 0;
+        }
+
+        .dest__arrow-btn:hover:not(:disabled) {
+          border-color: rgba(201,168,76,0.5);
+          color: #c9a84c;
+        }
+
+        .dest__arrow-btn:disabled {
+          opacity: 0.2;
+          cursor: default;
         }
       `}</style>
     </section>
