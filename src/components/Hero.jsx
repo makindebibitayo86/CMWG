@@ -39,7 +39,7 @@ function Hero() {
           loop
           playsInline
         >
-          <source src="https://res.cloudinary.com/dgjcl0te0/video/upload/f_auto,q_auto/cmwg/droneshots.webm" type="video/webm" />
+          <source src="https://ik.imagekit.io/igebmtpbb/CMWGfiles/droneshots4.webm" type="video/webm" />
         </video>
       </div>
 
@@ -51,7 +51,7 @@ function Hero() {
 
         {/* LEFT CONTENT */}
         <motion.div className="hero__left" {...fadeUp(0.2)}>
-          <p className="hero__eyebrow">Explore Africa Differently</p>
+          <p className="hero__eyebrow">Explore the World Differently</p>
 
           <h1 className="hero__title">
             Travel. Explore.<br />

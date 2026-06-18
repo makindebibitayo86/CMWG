@@ -21,8 +21,7 @@ const PILLARS = [
 
 // Two video sources — swap in your second clip URL below
 const VIDEO_SRCS = [
-  "https://res.cloudinary.com/dgjcl0te0/video/upload/q_auto/f_auto/v1780574431/droneshots2_rdkfka.mp4",
-  "https://res.cloudinary.com/dgjcl0te0/video/upload/q_auto/f_auto/v1780575852/canyonshots_iln33i.mp4", // ← replace with your second clip
+  "https://ik.imagekit.io/igebmtpbb/CMWGfiles/droneshots3.webm", // ← replace with your second clip
 ];
 
 const CROSSFADE_DURATION = 1200; // ms — duration of the opacity transition
@@ -73,12 +72,14 @@ export default function About() {
 
   // ── Video crossfade logic ──────────────────────────────────────────────────
   const [activeIndex, setActiveIndex] = useState(0);
-  const videoRefs = [useRef(null), useRef(null)];
+  const videoRef0 = useRef(null);
+  const videoRef1 = useRef(null);
+  const videoRefs = useRef([videoRef0, videoRef1]);
   const crossfadingRef = useRef(false);
 
   // Preload the inactive video so the crossfade is seamless
   useEffect(() => {
-    const inactive = videoRefs[activeIndex === 0 ? 1 : 0].current;
+    const inactive = videoRefs.current[activeIndex === 0 ? 1 : 0].current;
     if (inactive) {
       inactive.currentTime = 0;
       inactive.load();
@@ -88,13 +89,13 @@ export default function About() {
   const handleVideoEnding = (idx) => {
     // "timeupdate" listener — fires ~CROSSFADE_DURATION ms before the end
     return function () {
-      const vid = videoRefs[idx].current;
+      const vid = videoRefs.current[idx].current;
       if (!vid || crossfadingRef.current) return;
       if (vid.duration - vid.currentTime <= CROSSFADE_DURATION / 1000) {
         crossfadingRef.current = true;
 
         const nextIdx = idx === 0 ? 1 : 0;
-        const nextVid = videoRefs[nextIdx].current;
+        const nextVid = videoRefs.current[nextIdx].current;
         if (nextVid) {
           nextVid.currentTime = 0;
           nextVid.play().catch(() => {});
@@ -110,14 +111,14 @@ export default function About() {
   };
 
   useEffect(() => {
-    const handlers = videoRefs.map((ref, idx) => {
+    const handlers = videoRefs.current.map((ref, idx) => {
       const handler = handleVideoEnding(idx);
       ref.current?.addEventListener("timeupdate", handler);
       return handler;
     });
 
     return () => {
-      videoRefs.forEach((ref, idx) => {
+      videoRefs.current.forEach((ref, idx) => {
         ref.current?.removeEventListener("timeupdate", handlers[idx]);
       });
     };
@@ -158,7 +159,7 @@ export default function About() {
     >
       {/* ── Video A ── */}
       <video
-        ref={videoRefs[0]}
+        ref={videoRef0}
         autoPlay
         muted
         playsInline
@@ -170,7 +171,7 @@ export default function About() {
 
       {/* ── Video B ── */}
       <video
-        ref={videoRefs[1]}
+        ref={videoRef1}
         muted
         playsInline
         preload="auto"

@@ -216,7 +216,7 @@ const INIT = {
     ],
   },
   navbar: {
-    logoUrl: 'https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png',
+    logoUrl: 'https://ik.imagekit.io/makindebibitayo86/Idris/cmwg-logo.png',
     ctaLabel: 'Plan a Trip',
     ctaHref: '#plan',
     links: [
