@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import cmwgLogo from "../assets/cmwg-logo.png";
 
 const PILLARS = [
   {
@@ -257,7 +258,7 @@ export default function About() {
           }}
         >
           <img
-            src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png"
+            src={cmwgLogo}
             alt="CMWG Logo"
             style={{
               height: 120,

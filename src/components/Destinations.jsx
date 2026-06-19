@@ -813,7 +813,11 @@ export default function Destinations() {
           justify-content: center;
           overflow-y: auto;
           background: rgba(0,0,0,0.3);
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
+
+        .modal-form-col::-webkit-scrollbar { display: none; }
 
         .booking-form {
           display: flex;
@@ -1009,7 +1013,11 @@ export default function Destinations() {
             grid-template-rows: auto 1fr;
             height: 100%;
             overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
           }
+
+          .modal-body::-webkit-scrollbar { display: none; }
 
           .modal-info {
             padding: 2.5rem 1.6rem 2rem;

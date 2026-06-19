@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import cmwgLogo from '../assets/cmwg-logo.png'
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ function LoginScreen({ onLogin }) {
       <div style={{ position:'relative', width:400, animation:'loginIn .5s cubic-bezier(.16,1,.3,1) both' }}>
         {/* Header */}
         <div style={{ textAlign:'center', marginBottom:44 }}>
-          <a href="/"><img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:48, marginBottom:20 }} /></a>
+          <a href="/"><img src={cmwgLogo} alt="CMWG" style={{ height:48, marginBottom:20 }} /></a>
           <div style={{ display:'flex', alignItems:'center', gap:12, justifyContent:'center' }}>
             <div style={{ flex:1, height:1, background:'linear-gradient(90deg,transparent,#2a2a2a)' }} />
             <span style={{ color:'#3a3a3a', fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:'0.3em', textTransform:'uppercase' }}>Admin Portal</span>
@@ -314,8 +315,8 @@ function Field({ label, value, onChange, type='text', rows, placeholder }) {
 
 // ─── CLOUDINARY UPLOAD ───────────────────────────────────────────────────────
 
-const CLOUDINARY_CLOUD = 'dgjcl0te0'
-const CLOUDINARY_PRESET = 'doxjq87c'
+const CLOUDINARY_CLOUD = 'dot9y1mbc'
+const CLOUDINARY_PRESET = 'cmwgcloudinary'
 
 function CloudinaryUpload({ label, value, onChange }) {
   const [uploading, setUploading] = useState(false)
@@ -550,15 +551,6 @@ const ICON_BOOKINGS = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24
 
 const ICON_EXPERIENCES = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" style={{flexShrink:0}}><path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
 
-const NAV_SECTIONS = [
-  { key:'hero',         label:'Hero',         icon:ICON_HERO,     desc:'Landing section' },
-  { key:'destinations', label:'Destinations', icon:ICON_DEST,     desc:'Trip listings' },
-  { key:'merch',        label:'Shop',         icon:ICON_SHOP,     desc:'Merch catalog' },
-  { key:'about',        label:'About',        icon:ICON_ABOUT,    desc:'Brand story' },
-  { key:'navbar',       label:'Navbar',       icon:ICON_NAVBAR,   desc:'Navigation' },
-  { key:'footer',       label:'Footer',       icon:ICON_FOOTER,   desc:'Footer links' },
-]
-
 const OPS_SECTIONS = [
   { key:'destinations', label:'Destinations', icon:ICON_DEST,        desc:'Trip listings' },
   { key:'experiences',  label:'Experiences',  icon:ICON_EXPERIENCES, desc:'Travel stories' },
@@ -573,7 +565,7 @@ const CONFIG_SECTIONS = [
   { key:'footer', label:'Footer', icon:ICON_FOOTER, desc:'Footer links' },
 ]
 
-function SideNav({ active, onSelect, data, open, onToggle, isMobile, isTablet, isDesktop, activeUser, onLogout }) {
+function SideNav({ active, onSelect, data, open, onToggle, isMobile, isDesktop, activeUser, onLogout }) {
   const [configOpen, setConfigOpen] = useState(false)
 
   const NavBtn = ({ s }) => {
@@ -662,7 +654,7 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, isTablet, i
               display:'flex', alignItems:'center',
               justifyContent: effectiveOpen ? 'flex-start' : 'center',
               flexShrink:0, width:'100%',
-              background:'transparent', border:'none', borderBottom:'1px solid rgba(255,255,255,.04)',
+              background:'transparent', border:'none',
               cursor: isDesktop ? 'pointer' : 'default', textAlign:'left',
               transition:'background .15s',
             }}
@@ -672,12 +664,12 @@ function SideNav({ active, onSelect, data, open, onToggle, isMobile, isTablet, i
             {effectiveOpen
               ? <>
                   <div style={{ flex:1 }}>
-                    <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:34, display:'block' }} />
+                    <img src={cmwgLogo} alt="CMWG" style={{ height:34, display:'block' }} />
                     <p style={{ color:'#2a2a40', fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:'0.22em', textTransform:'uppercase', margin:'10px 0 0' }}>Content Admin</p>
                   </div>
                   {isDesktop && <span style={{ color:'#2a2a40', fontSize:12, fontFamily:"'DM Mono',monospace", marginLeft:8 }}>‹</span>}
                 </>
-              : <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height:22, width:22, objectFit:'contain', opacity:0.5 }} />
+              : <img src={cmwgLogo} alt="CMWG" style={{ height:22, width:22, objectFit:'contain', opacity:0.5 }} />
             }
           </button>
 
@@ -1195,12 +1187,26 @@ function MerchRow({ item, idx, onEdit, onDelete }) {
 
 // ─── MERCH EDITOR ────────────────────────────────────────────────────────────
 
+const generateMerchId = () => Date.now()
+
 function MerchEditor({ data, onChange }) {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(null)
 
-  const openEdit = (item) => { setEditing(item.id); setForm({...item}) }
-  const closeEdit = () => { setEditing(null); setForm(null) }
+  const openEdit = (item) => {
+    setEditing(item.id)
+    setForm({...item})
+    setActiveImg(0)
+    setUploadingSlots(new Set())
+    imgInputRef.current = null
+  }
+  const closeEdit = () => {
+    setEditing(null)
+    setForm(null)
+    setActiveImg(0)
+    setUploadingSlots(new Set())
+    imgInputRef.current = null
+  }
   const updateForm = (patch) => {
     const updated = { ...form, ...patch }
     setForm(updated)
@@ -1209,18 +1215,18 @@ function MerchEditor({ data, onChange }) {
 
   const deleteItem = (id) => { if (String(editing) === String(id)) closeEdit(); onChange(data.filter(d=>String(d.id)!==String(id))) }
   const addNew = () => {
-    const n = { id:Date.now(), name:'New Product', price:'$0', tag:'', desc:'', category:'Travel Gear', imgs:[], fields:['note'] }
+    const n = { id: generateMerchId(), name:'New Product', price:'$0', tag:'', desc:'', category:'Travel Gear', imgs:[], fields:['note'] }
     onChange([...data, n]); openEdit(n)
   }
 
   const ALL_FIELDS = ['sleeve','size','height','age','note']
   const [activeImg, setActiveImg] = useState(0)
   const [uploadingSlots, setUploadingSlots] = useState(new Set())
-  const imgInputRefs = useRef({})
+  const imgInputRef = useRef(null)
   const addSlotRef = useRef(null)
 
   // Reset image state when switching to a different item
-  useEffect(() => { setActiveImg(0); setUploadingSlots(new Set()); imgInputRefs.current = {} }, [editing])
+  // useEffect removed: state reset occurs when opening/closing edit mode
 
   const updateImg = (i,v) => { const imgs=[...(form?.imgs||[])]; imgs[i]=v; updateForm({imgs}); setActiveImg(i) }
   const removeImg = (i) => {
@@ -1320,11 +1326,11 @@ function MerchEditor({ data, onChange }) {
                 </div>
               )}
               {/* Action buttons on main preview */}
-              <input ref={el=>imgInputRefs.current[activeImg]=el} type="file" accept="image/*" style={{ display:'none' }}
+              <input ref={imgInputRef} type="file" accept="image/*" style={{ display:'none' }}
                 onChange={e=>{ handleImgFile(activeImg, e.target.files[0]); e.target.value='' }} />
               <div style={{ position:'absolute', top:8, right:8, display:'flex', gap:6 }}>
                 {/* Upload / replace button — always visible */}
-                <button onClick={()=>imgInputRefs.current[activeImg]?.click()} style={{
+                <button onClick={()=>imgInputRef.current?.click()} style={{
                   background:'rgba(0,0,0,.7)', border:'1px solid rgba(201,168,76,.35)',
                   color:'rgba(201,168,76,.8)', width:26, height:26, borderRadius:5,
                   cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
@@ -1550,8 +1556,6 @@ function ExperiencesEditor({ data, onChange }) {
   }
 
   const CATS = ['Adventure','Culture','Wildlife','Beach','City','Food','Spiritual','Photography']
-
-  const EXP_ICON = (exp) => exp.featured ? '★' : '◈'
 
   // Detect if active gallery item is a video
   const activeGalleryItem = (form?.gallery||[])[activeGallery]
@@ -1984,7 +1988,7 @@ function ExperiencesEditor({ data, onChange }) {
             No experiences yet — add your first travel story
           </div>
         )}
-        {(data||[]).map((exp, idx) => (
+        {(data||[]).map((exp) => (
           <div key={exp.id} style={{
             ...S.card,
             display:'flex', alignItems:'center',
@@ -2135,6 +2139,35 @@ function FooterEditor({ data, onChange }) {
 
 // ─── BOOKINGS EDITOR ─────────────────────────────────────────────────────────
 
+const LabelValue = ({ label, display, gold, wide, span2, mob }) => {
+  if (!display) return null
+  return (
+    <div style={{
+      gridColumn: wide ? '1 / -1' : span2 && !mob ? 'span 2' : undefined,
+      background: 'rgba(255,255,255,.02)',
+      border: '1px solid rgba(255,255,255,.05)',
+      borderRadius: 8, padding: mob ? '10px 12px' : '12px 14px',
+    }}>
+      <p style={{
+        fontFamily: "'DM Mono',monospace", fontSize: 9,
+        letterSpacing: '0.22em', textTransform: 'uppercase',
+        color: '#3a3a50', margin: '0 0 5px',
+      }}>{label}</p>
+      <p style={{
+        fontFamily: gold ? "'DM Mono',monospace" : "'DM Sans',sans-serif",
+        fontSize: gold ? (mob ? 13 : 15) : (mob ? 12 : 13),
+        fontWeight: gold ? 600 : 400,
+        color: gold ? '#c9a84c' : '#e8e0d0',
+        margin: 0, lineHeight: 1.5, wordBreak: 'break-word',
+      }}>{display}</p>
+    </div>
+  )
+}
+
+const SectionLabel = ({ children }) => (
+  <p style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a3a50', margin: '0 0 10px' }}>{children}</p>
+)
+
 // ─── RECORD DETAIL MODAL ─────────────────────────────────────────────────────
 
 function RecordDetailModal({ record, type, onClose }) {
@@ -2166,36 +2199,6 @@ function RecordDetailModal({ record, type, onClose }) {
     }
     return v
   }
-
-  const LabelValue = ({ label, value, gold, wide, span2 }) => {
-    const display = fmt(value)
-    if (!display) return null
-    return (
-      <div style={{
-        gridColumn: wide ? '1 / -1' : span2 && !mob ? 'span 2' : undefined,
-        background: 'rgba(255,255,255,.02)',
-        border: '1px solid rgba(255,255,255,.05)',
-        borderRadius: 8, padding: mob ? '10px 12px' : '12px 14px',
-      }}>
-        <p style={{
-          fontFamily: "'DM Mono',monospace", fontSize: 9,
-          letterSpacing: '0.22em', textTransform: 'uppercase',
-          color: '#3a3a50', margin: '0 0 5px',
-        }}>{label}</p>
-        <p style={{
-          fontFamily: gold ? "'DM Mono',monospace" : "'DM Sans',sans-serif",
-          fontSize: gold ? (mob ? 13 : 15) : (mob ? 12 : 13),
-          fontWeight: gold ? 600 : 400,
-          color: gold ? '#c9a84c' : '#e8e0d0',
-          margin: 0, lineHeight: 1.5, wordBreak: 'break-word',
-        }}>{display}</p>
-      </div>
-    )
-  }
-
-  const SectionLabel = ({ children }) => (
-    <p style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#3a3a50', margin: '0 0 10px' }}>{children}</p>
-  )
 
   const grid2 = { display: 'grid', gridTemplateColumns: mob ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 18 }
   const grid3 = { display: 'grid', gridTemplateColumns: mob ? '1fr 1fr' : '1fr 1fr 1fr', gap: 8, marginBottom: 18 }
@@ -2404,9 +2407,6 @@ function BookingsEditor({ onCount }) {
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 10
 
-  // Reset page when tab or search changes
-  useEffect(() => { setPage(1) }, [tab, search])
-
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
 
   useEffect(() => {
@@ -2449,7 +2449,7 @@ function BookingsEditor({ onCount }) {
   }
 
   const tabBtn = (key, label, count) => (
-    <button onClick={()=>setTab(key)} style={{
+    <button onClick={()=>{ setTab(key); setPage(1) }} style={{
       background: tab===key ? 'rgba(201,168,76,.12)' : 'transparent',
       border: `1px solid ${tab===key ? 'rgba(201,168,76,.4)' : 'rgba(255,255,255,.06)'}`,
       color: tab===key ? '#c9a84c' : '#444',
@@ -2509,7 +2509,7 @@ function BookingsEditor({ onCount }) {
       {/* Search */}
       <div style={{ marginBottom:16, position:'relative' }}>
         <input
-          value={search} onChange={e=>setSearch(e.target.value)}
+          value={search} onChange={e=>{ setSearch(e.target.value); setPage(1) }}
           placeholder="Search…"
           style={{
             width:'100%', background:'#090910', border:'1px solid #1a1a28',
@@ -2941,7 +2941,7 @@ function AdminPage({ activeUser, onLogout }) {
             </button>
           )}
           <a href="/">
-            <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" style={{ height: isMobile ? 36 : 48, display:'block' }} />
+            <img src={cmwgLogo} alt="CMWG" style={{ height: isMobile ? 36 : 48, display:'block' }} />
           </a>
           {!isMobile && <>
             <div style={{ width:1, height:16, background:'rgba(255,255,255,.06)' }} />

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import cmwgLogo from '../assets/cmwg-logo.png'
 
 const navLinks = [
   { label: 'Destinations', href: '#destinations' },
@@ -176,7 +177,7 @@ function Navbar() {
       >
         {/* Logo */}
         <a href="/" className="navbar__logo" aria-label="CMWG — home">
-          <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" width="auto" height="52" />
+          <img src={cmwgLogo} alt="CMWG" width="auto" height="52" />
         </a>
 
         {/* Desktop Links */}

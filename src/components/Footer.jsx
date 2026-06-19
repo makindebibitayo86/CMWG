@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import cmwgLogo from '../assets/cmwg-logo.png'
 
 const FOOTER_LINKS = {
   Explore: [
@@ -158,7 +159,7 @@ function FooterModal({ id, onClose }) {
 
           <div className="fm-inner">
             <img
-              src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png"
+              src={cmwgLogo}
               alt="CMWG"
               className="fm-logo"
             />
@@ -203,7 +204,7 @@ function Footer() {
       <div className="footer__top">
         <div className="footer__brand">
           <a href="/" className="footer__logo" aria-label="CMWG Home">
-            <img src="https://res.cloudinary.com/dgjcl0te0/image/upload/f_auto,q_auto/cmwg/cmwg-logo.png" alt="CMWG" className="footer__logo-img" />
+            <img src={cmwgLogo} alt="CMWG" className="footer__logo-img" />
           </a>
           <p className="footer__tagline">
             Africa's cinematic travel experience.<br />
@@ -487,12 +488,11 @@ function Footer() {
           max-width: 560px;
           max-height: 85vh;
           overflow-y: auto;
-          scrollbar-width: thin;
-          scrollbar-color: rgba(201,168,76,0.2) transparent;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
 
-        .fm-modal::-webkit-scrollbar { width: 4px; }
-        .fm-modal::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 2px; }
+        .fm-modal::-webkit-scrollbar { display: none; }
 
         .fm-close {
           position: sticky;

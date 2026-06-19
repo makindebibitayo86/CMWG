@@ -760,13 +760,11 @@ export default function Merch() {
           min-height: 0;
           max-height: 92vh;
           box-sizing: border-box;
-          scrollbar-width: thin;
-          scrollbar-color: rgba(201,168,76,0.3) transparent;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
 
-        .m-right::-webkit-scrollbar { width: 4px; }
-        .m-right::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); }
-        .m-right::-webkit-scrollbar-track { background: transparent; }
+        .m-right::-webkit-scrollbar { display: none; }
 
         .m-cat {
           font-size: 0.62rem;
@@ -1088,7 +1086,10 @@ export default function Merch() {
             grid-template-rows: auto 1fr;
             overflow-y: auto;
             max-height: calc(96vh - 0px);
+            scrollbar-width: none;
+            -ms-overflow-style: none;
           }
+          .m-body::-webkit-scrollbar { display: none; }
           .m-gallery {
             border-right: none;
             border-bottom: 1px solid rgba(255,255,255,0.07);
