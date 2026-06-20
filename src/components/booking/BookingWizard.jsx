@@ -2,161 +2,14 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import './BookingWizard.css'
 
-/* ─── Fallback destination + hotel data — used only until the sheet data loads,
-   or if the fetch fails ──────────────────────────────────────────────────── */
-const FALLBACK_DESTINATIONS = [
-  { key: 'Paris, France', name: 'Paris', sub: 'France', img: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=700&q=80' },
-  { key: 'Tokyo, Japan', name: 'Tokyo', sub: 'Japan', img: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=700&q=80' },
-  { key: 'Santorini, Greece', name: 'Santorini', sub: 'Greece', img: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=700&q=80' },
-  { key: 'New York, USA', name: 'New York', sub: 'USA', img: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=700&q=80' },
-  { key: 'Dubai, UAE', name: 'Dubai', sub: 'UAE', img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=700&q=80' },
-  { key: 'Bali, Indonesia', name: 'Bali', sub: 'Indonesia', img: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=700&q=80' },
-  { key: 'Lagos, Nigeria', name: 'Lagos', sub: 'Nigeria', img: 'https://images.unsplash.com/photo-1618828665347-7484933dadf0?w=700&q=80' },
-  { key: 'Abuja, Nigeria', name: 'Abuja', sub: 'Nigeria', img: 'https://images.unsplash.com/photo-1611348524140-53c9a25263d6?w=700&q=80' },
-  { key: 'Cape Town, South Africa', name: 'Cape Town', sub: 'South Africa', img: 'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=700&q=80' },
-  { key: 'Johannesburg, South Africa', name: 'Johannesburg', sub: 'South Africa', img: 'https://images.unsplash.com/photo-1577948000111-9c970dfe3743?w=700&q=80' },
-  { key: 'Nairobi, Kenya', name: 'Nairobi', sub: 'Kenya', img: 'https://images.unsplash.com/photo-1611348586804-61bf6c080437?w=700&q=80' },
-  { key: 'Cairo, Egypt', name: 'Cairo', sub: 'Egypt', img: 'https://images.unsplash.com/photo-1539768942893-daf53e448371?w=700&q=80' },
-  { key: 'Marrakech, Morocco', name: 'Marrakech', sub: 'Morocco', img: 'https://images.unsplash.com/photo-1597212720158-3b1bc5b97c64?w=700&q=80' },
-  { key: 'Accra, Ghana', name: 'Accra', sub: 'Ghana', img: 'https://images.unsplash.com/photo-1572697358620-7d0bd83cb15a?w=700&q=80' },
-  { key: 'Zanzibar, Tanzania', name: 'Zanzibar', sub: 'Tanzania', img: 'https://images.unsplash.com/photo-1589197331516-4d84b72ebde3?w=700&q=80' },
-]
-
-/* Generic hotel exterior/interior photos, cycled per-city since we don't
-   have real per-hotel photography for the new destinations */
+/* ─── Generic hotel image pool — cycled per-hotel when the sheet
+   doesn't supply a dedicated photo for that property ──────────── */
 const HOTEL_IMG_POOL = [
   'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=700&q=80',
   'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=700&q=80',
   'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=700&q=80',
   'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=700&q=80',
 ]
-
-const FALLBACK_HOTELS = {
-  'Paris, France': [
-    { name: 'Ritz Paris', price: 950 },
-    { name: 'Four Seasons Hotel George V', price: 1100 },
-    { name: 'Hilton Paris Opéra', price: 280 },
-    { name: 'Le Meurice', price: 820 },
-    { name: 'Hôtel Plaza Athénée', price: 990 },
-    { name: 'Novotel Paris Centre Tour Eiffel', price: 210 },
-    { name: 'Citadines Saint-Germain-des-Prés', price: 175 },
-    { name: 'Shangri-La Hotel Paris', price: 870 },
-  ],
-  'Tokyo, Japan': [
-    { name: 'Park Hyatt Tokyo', price: 480 },
-    { name: 'Mandarin Oriental Tokyo', price: 620 },
-    { name: 'Hilton Tokyo', price: 290 },
-    { name: 'The Ritz-Carlton Tokyo', price: 690 },
-    { name: 'Shinjuku Granbell Hotel', price: 150 },
-    { name: 'Asakusa View Hotel', price: 170 },
-    { name: 'Conrad Tokyo', price: 510 },
-    { name: 'Tokyo Marriott Hotel', price: 340 },
-  ],
-  'Santorini, Greece': [
-    { name: 'Katikies Hotel Santorini', price: 850 },
-    { name: 'Canaves Oia Suites', price: 720 },
-    { name: 'Grace Hotel Santorini, Auberge Resorts Collection', price: 780 },
-    { name: 'Santo Pure Oia Suites', price: 540 },
-    { name: 'Fira Boutique Hotel', price: 190 },
-    { name: 'Kamari Beach Resort', price: 220 },
-    { name: 'Mystique, a Luxury Collection Hotel', price: 690 },
-  ],
-  'New York, USA': [
-    { name: 'The Plaza', price: 750 },
-    { name: 'Waldorf Astoria New York', price: 680 },
-    { name: 'New York Marriott Marquis', price: 360 },
-    { name: 'Hilton Midtown', price: 320 },
-    { name: 'The Ritz-Carlton New York, Central Park', price: 890 },
-    { name: 'Sheraton New York Times Square', price: 290 },
-    { name: 'Brooklyn Loft Hotel', price: 220 },
-    { name: 'citizenM New York Times Square', price: 210 },
-  ],
-  'Dubai, UAE': [
-    { name: 'Burj Al Arab Jumeirah', price: 1900 },
-    { name: 'Atlantis, The Palm', price: 650 },
-    { name: 'Armani Hotel Dubai', price: 720 },
-    { name: 'Address Downtown', price: 480 },
-    { name: 'JW Marriott Marquis Dubai', price: 340 },
-    { name: 'Raffles Dubai', price: 510 },
-    { name: 'Radisson Blu Dubai Deira Creek', price: 230 },
-    { name: 'Four Seasons Resort Dubai at Jumeirah Beach', price: 780 },
-    { name: 'Rove Downtown Dubai', price: 140 },
-  ],
-  'Bali, Indonesia': [
-    { name: 'Four Seasons Resort Bali at Sayan', price: 920 },
-    { name: 'The Mulia, Bali', price: 480 },
-    { name: 'Ayana Resort and Spa Bali', price: 390 },
-    { name: 'Hanging Gardens of Bali', price: 560 },
-    { name: 'Seminyak Beach Club', price: 230 },
-    { name: 'Canggu Surf Lodge', price: 140 },
-    { name: 'Ubud Rice Field Villa', price: 160 },
-  ],
-  'Lagos, Nigeria': [
-    { name: 'Eko Hotel & Suites', price: 260 },
-    { name: 'Radisson Blu Hotel Lagos Ikeja', price: 230 },
-    { name: 'Four Points by Sheraton Lagos', price: 210 },
-    { name: 'Lagos Continental Hotel', price: 240 },
-    { name: 'Wheatbaker Hotel', price: 280 },
-    { name: 'Banana Island Residence', price: 340 },
-    { name: 'Oniru Beachfront Suites', price: 240 },
-  ],
-  'Abuja, Nigeria': [
-    { name: 'Transcorp Hilton Abuja', price: 280 },
-    { name: 'Sheraton Abuja Hotel', price: 230 },
-    { name: 'Nicon Luxury Hotel Abuja', price: 175 },
-    { name: 'Fraser Suites Abuja', price: 210 },
-    { name: 'Jabi Lake Residence', price: 165 },
-  ],
-  'Cape Town, South Africa': [
-    { name: 'One&Only Cape Town', price: 580 },
-    { name: 'The Table Bay Hotel', price: 420 },
-    { name: 'Belmond Mount Nelson Hotel', price: 510 },
-    { name: 'Radisson Blu Hotel Waterfront Cape Town', price: 230 },
-    { name: 'Camps Bay Cliffside', price: 340 },
-    { name: 'Bo-Kaap Boutique Stay', price: 175 },
-  ],
-  'Johannesburg, South Africa': [
-    { name: 'Sandton Sun Hotel', price: 230 },
-    { name: 'The Saxon Hotel, Villas and Spa', price: 480 },
-    { name: 'Radisson Blu Sandton', price: 220 },
-    { name: 'Melrose Arch Residences', price: 240 },
-    { name: 'Maboneng Loft Hotel', price: 145 },
-  ],
-  'Nairobi, Kenya': [
-    { name: 'Hilton Nairobi', price: 220 },
-    { name: 'Radisson Blu Nairobi Upper Hill', price: 200 },
-    { name: 'Villa Rosa Kempinski Nairobi', price: 290 },
-    { name: 'Karen Acacia Lodge', price: 190 },
-    { name: 'Nairobi National Park View', price: 280 },
-  ],
-  'Cairo, Egypt': [
-    { name: 'Four Seasons Hotel Cairo at Nile Plaza', price: 480 },
-    { name: 'Marriott Mena House, Cairo', price: 420 },
-    { name: 'Cairo Marriott Hotel & Omar Khayyam Casino', price: 260 },
-    { name: 'Nile Corniche Suites', price: 210 },
-    { name: 'Khan el-Khalili Boutique', price: 140 },
-  ],
-  'Marrakech, Morocco': [
-    { name: 'La Mamounia', price: 650 },
-    { name: 'Royal Mansour Marrakech', price: 1100 },
-    { name: 'Four Seasons Resort Marrakech', price: 580 },
-    { name: 'Medina Riad Retreat', price: 180 },
-    { name: 'Palmeraie Desert Resort', price: 290 },
-  ],
-  'Accra, Ghana': [
-    { name: 'Kempinski Hotel Gold Coast City Accra', price: 280 },
-    { name: 'Labadi Beach Hotel', price: 200 },
-    { name: 'Movenpick Ambassador Hotel Accra', price: 250 },
-    { name: 'East Legon Garden Lodge', price: 170 },
-  ],
-  'Zanzibar, Tanzania': [
-    { name: 'Park Hyatt Zanzibar', price: 620 },
-    { name: 'Royal Zanzibar Beach Resort', price: 280 },
-    { name: 'Stone Town Heritage Hotel', price: 190 },
-    { name: 'Nungwi Beach Resort', price: 260 },
-    { name: 'Kendwa Sunset Villas', price: 210 },
-  ],
-}
 
 const VIEWS = [
   { value: 'Ocean view', label: 'Ocean', img: 'https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?w=700&q=80' },
@@ -537,9 +390,10 @@ export default function BookingWizard() {
   const [refCode, setRefCode] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
-  const [locations, setLocations] = useState(FALLBACK_DESTINATIONS)
-  const [hotelsByLocation, setHotelsByLocation] = useState(FALLBACK_HOTELS)
+  const [locations, setLocations] = useState([])
+  const [hotelsByLocation, setHotelsByLocation] = useState({})
   const [dataLoading, setDataLoading] = useState(true)
+  const [dataError, setDataError] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const wizardRef = useRef(null)
   const hasMountedRef = useRef(false)
@@ -586,7 +440,7 @@ export default function BookingWizard() {
           setHotelsByLocation(grouped)
         }
       } catch (err) {
-        // Sheet fetch failed — silently keep the fallback data already in state.
+        setDataError(true)
       } finally {
         setDataLoading(false)
       }
@@ -750,25 +604,32 @@ export default function BookingWizard() {
           {step === 0 && (
             <motion.div key="step0" className="step-panel" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
               <p className="step-heading">Where are you headed?</p>
-              <p className="step-sub">{dataLoading ? 'Loading destinations…' : 'Pick a destination to see available hotels.'}</p>
+              <p className="step-sub">
+                {dataLoading ? 'Loading destinations…' : dataError ? 'Failed to load destinations — please refresh.' : 'Pick a destination to see available hotels.'}
+              </p>
               <Carousel>
-                {locations.map((d) => (
-                  <div
-                    key={d.key}
-                    className={`photo-card photo-card--carousel ${location === d.key ? 'selected' : ''}`}
-                    onClick={() => {
-                      setLocation(d.key)
-                      setHotel(null)
-                      autoAdvance()
-                    }}
-                  >
-                    <div className="photo-card__img" style={{ backgroundImage: `url(${d.img})` }} />
-                    <div className="photo-card__body">
-                      <div className="photo-card__name">{d.name}</div>
-                      <div className="photo-card__sub">{d.sub}</div>
-                    </div>
-                  </div>
-                ))}
+                {dataLoading
+                  ? Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="photo-card photo-card--carousel photo-card--skeleton" />
+                    ))
+                  : locations.map((d) => (
+                      <div
+                        key={d.key}
+                        className={`photo-card photo-card--carousel ${location === d.key ? 'selected' : ''}`}
+                        onClick={() => {
+                          setLocation(d.key)
+                          setHotel(null)
+                          autoAdvance()
+                        }}
+                      >
+                        <div className="photo-card__img" style={{ backgroundImage: `url(${d.img})` }} />
+                        <div className="photo-card__body">
+                          <div className="photo-card__name">{d.name}</div>
+                          <div className="photo-card__sub">{d.sub}</div>
+                        </div>
+                      </div>
+                    ))
+                }
               </Carousel>
             </motion.div>
           )}
@@ -777,24 +638,31 @@ export default function BookingWizard() {
           {step === 1 && (
             <motion.div key="step1" className="step-panel" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
               <p className="step-heading">Choose your hotel</p>
-              <p className="step-sub">Top picks in {location}</p>
+              <p className="step-sub">
+                {dataLoading ? 'Loading hotels…' : `Top picks in ${location}`}
+              </p>
               <Carousel>
-                {(hotelsByLocation[location] || []).map((h, i) => (
-                  <div
-                    key={h.name}
-                    className={`photo-card photo-card--carousel ${hotel?.name === h.name ? 'selected' : ''}`}
-                    onClick={() => {
-                      setHotel(h)
-                      autoAdvance()
-                    }}
-                  >
-                    <div className="photo-card__img" style={{ backgroundImage: `url(${h.img || HOTEL_IMG_POOL[i % HOTEL_IMG_POOL.length]})` }} />
-                    <div className="photo-card__body">
-                      <div className="photo-card__name">{h.name}</div>
-                      <div className="photo-card__sub">from ${h.price}/night</div>
-                    </div>
-                  </div>
-                ))}
+                {dataLoading
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="photo-card photo-card--carousel photo-card--skeleton" />
+                    ))
+                  : (hotelsByLocation[location] || []).map((h, i) => (
+                      <div
+                        key={h.name}
+                        className={`photo-card photo-card--carousel ${hotel?.name === h.name ? 'selected' : ''}`}
+                        onClick={() => {
+                          setHotel(h)
+                          autoAdvance()
+                        }}
+                      >
+                        <div className="photo-card__img" style={{ backgroundImage: `url(${h.img || HOTEL_IMG_POOL[i % HOTEL_IMG_POOL.length]})` }} />
+                        <div className="photo-card__body">
+                          <div className="photo-card__name">{h.name}</div>
+                          <div className="photo-card__sub">from ${h.price}/night</div>
+                        </div>
+                      </div>
+                    ))
+                }
               </Carousel>
             </motion.div>
           )}
