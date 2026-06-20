@@ -33,129 +33,167 @@
 .step-heading { font-size: 34px; font-weight: 500; color: #fafaf8; margin: 0 0 0.5rem; font-family: 'Cormorant Garamond', serif; text-align: center; }
 .step-sub { font-size: 18px; color: rgba(250,250,248,0.55); margin: 0 0 2.2rem; text-align: center; }
 
-/* ─── Equal-size swipe carousel (Location / Hotel / View / Payment) ──
-   Same track at every breakpoint — fixed-width cards, drag-to-scroll
-   on desktop, swipe on touch. No per-card scale/opacity. ── */
+/* ─── Carousel (Location / Hotel steps) ──────────────────────── */
 .carousel {
   position: relative;
   margin-bottom: 2rem;
+  padding: 0 64px;
 }
 
 .carousel__track {
   display: flex;
+  align-items: center;
   gap: 12px;
   overflow-x: auto;
-  cursor: grab;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  padding: 4px 4px 0.4rem;
+  padding: 60px 4px 76px;
   scrollbar-width: none;
-  user-select: none;
+  justify-content: safe center;
 }
-.carousel__track:active { cursor: grabbing; }
 .carousel__track::-webkit-scrollbar { display: none; }
 
 .carousel__item {
   flex: 0 0 420px;
   width: 420px;
-  scroll-snap-align: start;
+  scroll-snap-align: center;
+  transform-origin: center center;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+  will-change: transform, opacity;
 }
+
+.carousel__arrow {
+  position: absolute;
+  top: 56px;
+  bottom: 72px;
+  width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to right, rgba(10,10,10,0.95), rgba(10,10,10,0));
+  border: none;
+  color: #fafaf8;
+  font-size: 36px;
+  cursor: pointer;
+  z-index: 5;
+  transition: opacity 0.2s;
+}
+
+.carousel__arrow--left { left: 0; }
+.carousel__arrow--right { right: 0; background: linear-gradient(to left, rgba(10,10,10,0.95), rgba(10,10,10,0)); }
+
+.carousel__arrow:hover { color: #c9a96e; }
 
 .photo-card.photo-card--carousel {
   width: 100%;
   height: 480px;
 }
 
-/* Swipe hint — only rendered (in JS) on touch-sized viewports */
-.carousel__swipe-hint {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  margin: 0.7rem 0 0;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(201,169,110,0.8);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
-}
-.carousel__swipe-hint.visible { opacity: 1; }
-.carousel__swipe-arrow {
-  display: inline-block;
-  animation: wiz-swipe-nudge 0.9s ease-in-out infinite alternate;
-}
-.carousel__swipe-arrow:last-child { animation-direction: alternate-reverse; }
-@keyframes wiz-swipe-nudge {
-  from { transform: translateX(-4px); }
-  to   { transform: translateX(4px); }
-}
-
-/* Dot pagination + small round arrow buttons below the track — same at every size */
-.carousel__dots {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1.2rem;
-  margin-top: 1rem;
-}
-.carousel__dot-track { display: flex; align-items: center; gap: 0.45rem; }
-.carousel__dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.15);
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-}
-.carousel__dot.active {
-  width: 22px;
-  border-radius: 3px;
-  background: #c9a96e;
-}
-.carousel__arrow-btn {
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.4);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 0.95rem;
-  font-family: 'DM Sans', sans-serif;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.2s, color 0.2s;
-  flex-shrink: 0;
-}
-.carousel__arrow-btn:hover:not(:disabled) {
-  border-color: rgba(201,169,110,0.5);
-  color: #c9a96e;
-}
-.carousel__arrow-btn:disabled { opacity: 0.2; cursor: default; }
-
-/* ── Mobile: same track, just narrower fixed-width cards ──
-   Mirrors Destinations.jsx — 85vw cards, snap-to-start. Equal
-   sizing every scroll position is preserved at every breakpoint;
-   this only changes the fixed card width/height. ── */
+/* ─── Mobile carousel — scroll-snap + dots, no coverflow JS ──────
+   Mirrors the working pattern from Destinations.jsx: near-full-width
+   viewport-relative cards, snap-to-start, swipe hint, dot pagination
+   instead of overlaid gradient arrows. Desktop carousel rules above
+   are untouched — this block only applies under 767px, matching the
+   `isMobile` (`window.innerWidth < 768`) check in the component. ── */
 @media (max-width: 767px) {
-  .carousel__track {
-    padding: 4px 7.5vw 0.4rem;
+  .carousel--mobile {
+    padding: 0;
+    margin-bottom: 1.6rem;
   }
 
-  .carousel__item {
+  .carousel__track--mobile {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 7.5vw 0.4rem;
+    scrollbar-width: none;
+  }
+  .carousel__track--mobile::-webkit-scrollbar { display: none; }
+
+  .carousel__item--mobile {
     flex: 0 0 85vw;
     width: 85vw;
+    scroll-snap-align: start;
   }
 
-  .carousel__item .photo-card.photo-card--carousel {
+  .carousel__item--mobile .photo-card.photo-card--carousel {
     height: 56vw;
     max-height: 360px;
     min-height: 260px;
   }
+
+  /* Swipe hint */
+  .carousel__swipe-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin: 0 0 0.7rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(201,169,110,0.8);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .carousel__swipe-hint.visible { opacity: 1; }
+  .carousel__swipe-arrow {
+    display: inline-block;
+    animation: wiz-swipe-nudge 0.9s ease-in-out infinite alternate;
+  }
+  .carousel__swipe-arrow:last-child { animation-direction: alternate-reverse; }
+  @keyframes wiz-swipe-nudge {
+    from { transform: translateX(-4px); }
+    to   { transform: translateX(4px); }
+  }
+
+  /* Dot pagination + small round arrow buttons below the track */
+  .carousel__dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.2rem;
+    margin-top: 0.7rem;
+  }
+  .carousel__dot-track { display: flex; align-items: center; gap: 0.45rem; }
+  .carousel__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+  }
+  .carousel__dot.active {
+    width: 22px;
+    border-radius: 3px;
+    background: #c9a96e;
+  }
+  .carousel__arrow-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.4);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s, color 0.2s;
+    flex-shrink: 0;
+  }
+  .carousel__arrow-btn:hover:not(:disabled) {
+    border-color: rgba(201,169,110,0.5);
+    color: #c9a96e;
+  }
+  .carousel__arrow-btn:disabled { opacity: 0.2; cursor: default; }
 }
 
 .photo-card {

@@ -208,13 +208,12 @@ function nightsCopy(n) {
   return 'An extended retreat.'
 }
 
-/* ─── Equal-size swipe carousel: same fixed-width card track at every
-   breakpoint (desktop drag-to-scroll + dot/arrow pagination, mobile
-   swipe + dot/arrow pagination + a one-time swipe hint). No per-card
-   scale/opacity — every card is always the same size, exactly the
-   pattern used by the mobile carousels on Destinations.jsx. ── */
+/* ─── Coverflow carousel: center card is biggest, neighbors shrink
+   and fade based on distance from center. Smoothly re-scales as the
+   user drags/swipes/scrolls or uses the arrow buttons. ── */
 function Carousel({ children }) {
   const trackRef = useRef(null)
+  const rafRef = useRef(null)
   const [isMobile, setIsMobile] = useState(false)
   const [activeDot, setActiveDot] = useState(0)
   const [showSwipeHint, setShowSwipeHint] = useState(true)
@@ -222,6 +221,8 @@ function Carousel({ children }) {
   const items = Array.isArray(children) ? children : [children]
   const dotCount = items.length
 
+  /* Track viewport — mirrors the `< 768` mobile check used elsewhere
+     so the JS branch and the CSS breakpoint never disagree. */
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
     check()
@@ -229,9 +230,59 @@ function Carousel({ children }) {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  /* ── Desktop-only coverflow scaling — untouched, and skipped entirely on mobile ── */
+  function updateScales() {
+    const el = trackRef.current
+    if (!el) return
+    const trackRect = el.getBoundingClientRect()
+    const center = trackRect.left + trackRect.width / 2
+    const els = el.querySelectorAll('.carousel__item')
+    els.forEach((item) => {
+      const r = item.getBoundingClientRect()
+      const itemCenter = r.left + r.width / 2
+      const dist = Math.abs(itemCenter - center)
+      const norm = Math.min(dist / (trackRect.width / 2 + r.width / 2), 1)
+      const scale = 1 - norm * 0.32
+      const opacity = 1 - norm * 0.55
+      item.style.transform = `scale(${scale})`
+      item.style.opacity = opacity
+      item.style.zIndex = String(Math.round((1 - norm) * 100))
+    })
+  }
+
+  function scheduleUpdate() {
+    if (rafRef.current) return
+    rafRef.current = requestAnimationFrame(() => {
+      updateScales()
+      rafRef.current = null
+    })
+  }
+
+  useEffect(() => {
+    if (isMobile) return
+    updateScales()
+    const el = trackRef.current
+    if (!el) return
+    el.addEventListener('scroll', scheduleUpdate, { passive: true })
+    window.addEventListener('resize', scheduleUpdate)
+    return () => {
+      el.removeEventListener('scroll', scheduleUpdate)
+      window.removeEventListener('resize', scheduleUpdate)
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+  }, [children, isMobile])
+
+  function scrollByAmount(dir) {
+    const el = trackRef.current
+    if (!el) return
+    const amount = el.clientWidth * 0.55
+    el.scrollBy({ left: dir * amount, behavior: 'smooth' })
+  }
+
+  /* ── Mobile-only: plain scroll-snap track + dot tracking + swipe hint ── */
   const baselineScrollRef = useRef(null)
 
-  function onScroll() {
+  function onMobileScroll() {
     const el = trackRef.current
     if (!el) return
 
@@ -252,82 +303,67 @@ function Carousel({ children }) {
     setActiveDot(Math.min(idx, dotCount - 1))
   }
 
-  function scrollByCard(dir) {
+  function scrollByCardMobile(dir) {
     const el = trackRef.current
     if (!el) return
-    const cardWidth = el.querySelector('.carousel__item')?.offsetWidth || 380
+    const cardWidth = el.querySelector('.carousel__item--mobile')?.offsetWidth || 300
     el.scrollBy({ left: dir * (cardWidth + 12), behavior: 'smooth' })
   }
 
-  // Desktop mouse drag-to-scroll with momentum (touch devices already scroll natively)
-  const drag = useRef({ isDown: false, startX: 0, scrollLeft: 0, velocity: 0 })
+  if (isMobile) {
+    return (
+      <div className="carousel carousel--mobile">
+        {showSwipeHint && (
+          <div className="carousel__swipe-hint visible">
+            <span className="carousel__swipe-arrow">←</span>
+            <span>Swipe to explore</span>
+            <span className="carousel__swipe-arrow">→</span>
+          </div>
+        )}
 
-  function onDown(e) {
-    const el = trackRef.current
-    if (!el) return
-    drag.current = { ...drag.current, isDown: true, startX: e.pageX - el.offsetLeft, scrollLeft: el.scrollLeft }
-  }
-  function onUp() {
-    drag.current.isDown = false
-    const momentum = () => {
-      const el = trackRef.current
-      if (!el) return
-      el.scrollLeft += drag.current.velocity
-      drag.current.velocity *= 0.92
-      if (Math.abs(drag.current.velocity) > 0.5) requestAnimationFrame(momentum)
-    }
-    momentum()
-  }
-  function onMove(e) {
-    if (!drag.current.isDown) return
-    const el = trackRef.current
-    if (!el) return
-    const walk = (e.pageX - el.offsetLeft) - drag.current.startX
-    drag.current.velocity = walk * 0.15
-    el.scrollLeft = drag.current.scrollLeft - walk
+        <div className="carousel__track carousel__track--mobile" ref={trackRef} onScroll={onMobileScroll}>
+          {items.map((child, i) => (
+            <div className="carousel__item carousel__item--mobile" key={child.key ?? i}>
+              {child}
+            </div>
+          ))}
+        </div>
+
+        {dotCount > 1 && (
+          <div className="carousel__dots">
+            <button className="carousel__arrow-btn" type="button" onClick={() => scrollByCardMobile(-1)} disabled={activeDot === 0} aria-label="Previous">
+              ‹
+            </button>
+            <div className="carousel__dot-track">
+              {Array.from({ length: dotCount }).map((_, i) => (
+                <div key={i} className={`carousel__dot ${activeDot === i ? 'active' : ''}`} />
+              ))}
+            </div>
+            <button className="carousel__arrow-btn" type="button" onClick={() => scrollByCardMobile(1)} disabled={activeDot === dotCount - 1} aria-label="Next">
+              ›
+            </button>
+          </div>
+        )}
+      </div>
+    )
   }
 
+  /* ── Desktop render — exactly as before ── */
   return (
     <div className="carousel">
-      <div
-        className="carousel__track"
-        ref={trackRef}
-        onScroll={onScroll}
-        onMouseDown={onDown}
-        onMouseUp={onUp}
-        onMouseLeave={onUp}
-        onMouseMove={onMove}
-      >
+      <button className="carousel__arrow carousel__arrow--left" type="button" onClick={() => scrollByAmount(-1)} aria-label="Scroll left">
+        ‹
+      </button>
+      <div className="carousel__track" ref={trackRef}>
         {items.map((child, i) => (
           <div className="carousel__item" key={child.key ?? i}>
             {child}
           </div>
         ))}
       </div>
-
-      {isMobile && (
-        <div className={`carousel__swipe-hint${showSwipeHint ? ' visible' : ''}`}>
-          <span className="carousel__swipe-arrow">←</span>
-          <span>Swipe to explore</span>
-          <span className="carousel__swipe-arrow">→</span>
-        </div>
-      )}
-
-      {dotCount > 1 && (
-        <div className="carousel__dots">
-          <button className="carousel__arrow-btn" type="button" onClick={() => scrollByCard(-1)} disabled={activeDot === 0} aria-label="Previous">
-            ‹
-          </button>
-          <div className="carousel__dot-track">
-            {Array.from({ length: dotCount }).map((_, i) => (
-              <div key={i} className={`carousel__dot ${activeDot === i ? 'active' : ''}`} />
-            ))}
-          </div>
-          <button className="carousel__arrow-btn" type="button" onClick={() => scrollByCard(1)} disabled={activeDot === dotCount - 1} aria-label="Next">
-            ›
-          </button>
-        </div>
-      )}
+      <button className="carousel__arrow carousel__arrow--right" type="button" onClick={() => scrollByAmount(1)} aria-label="Scroll right">
+        ›
+      </button>
     </div>
   )
 }
@@ -617,11 +653,10 @@ export default function BookingWizard() {
     })
   }
 
-  /* Mobile only: after a single-tap selection (Location/Hotel/View/Payment),
+  /* After a single-tap/click selection (Location/Hotel/View/Dates/Payment),
      advance automatically — short delay so the selected highlight is
-     visible before the step transitions out. */
+     visible before the step transitions out. Same behavior on every device. */
   function autoAdvance() {
-    if (!isMobile) return
     setTimeout(() => goNext(), 280)
   }
   function goBack() {
@@ -701,12 +736,6 @@ export default function BookingWizard() {
                   </div>
                 ))}
               </Carousel>
-              {!isMobile && (
-                <div className="btn-row">
-                  <span />
-                  <button className="btn-next" disabled={nextDisabled()} onClick={goNext}>Continue</button>
-                </div>
-              )}
             </motion.div>
           )}
 
@@ -733,12 +762,6 @@ export default function BookingWizard() {
                   </div>
                 ))}
               </Carousel>
-              {!isMobile && (
-                <div className="btn-row">
-                  <button className="btn-back" onClick={goBack}>Back</button>
-                  <button className="btn-next" disabled={nextDisabled()} onClick={goNext}>Continue</button>
-                </div>
-              )}
             </motion.div>
           )}
 
@@ -764,12 +787,6 @@ export default function BookingWizard() {
                   </div>
                 ))}
               </Carousel>
-              {!isMobile && (
-                <div className="btn-row">
-                  <button className="btn-back" onClick={goBack}>Back</button>
-                  <button className="btn-next" disabled={nextDisabled()} onClick={goNext}>Continue</button>
-                </div>
-              )}
             </motion.div>
           )}
 
@@ -822,13 +839,6 @@ export default function BookingWizard() {
                   )}
                 </div>
               </div>
-
-              {!isMobile && (
-                <div className="btn-row">
-                  <button className="btn-back" onClick={goBack}>Back</button>
-                  <button className="btn-next" disabled={nextDisabled()} onClick={goNext}>Continue</button>
-                </div>
-              )}
             </motion.div>
           )}
 
@@ -865,13 +875,6 @@ export default function BookingWizard() {
                   </div>
                 </div>
               </Carousel>
-
-              {!isMobile && (
-                <div className="btn-row">
-                  <button className="btn-back" onClick={goBack}>Back</button>
-                  <button className="btn-next" disabled={nextDisabled()} onClick={goNext}>Continue</button>
-                </div>
-              )}
             </motion.div>
           )}
 
