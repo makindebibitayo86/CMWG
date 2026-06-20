@@ -214,7 +214,14 @@ function nightsCopy(n) {
 function Carousel({ children }) {
   const trackRef = useRef(null)
   const rafRef = useRef(null)
-  const [isMobile, setIsMobile] = useState(false)
+  /* Read the real width on the very first render instead of defaulting to
+     `false` — otherwise the component briefly mounts as "desktop", the
+     coverflow effect below fires once and writes inline transform/opacity
+     directly onto the card DOM nodes, and those nodes get reused (not
+     recreated) once `isMobile` flips true a moment later. The leftover
+     scale/opacity is exactly the "first card big, rest small and faded"
+     bug — so mobile must never run updateScales() even once. */
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
   const [activeDot, setActiveDot] = useState(0)
   const [showSwipeHint, setShowSwipeHint] = useState(true)
 
@@ -225,7 +232,6 @@ function Carousel({ children }) {
      so the JS branch and the CSS breakpoint never disagree. */
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
-    check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
@@ -272,6 +278,22 @@ function Carousel({ children }) {
     }
   }, [children, isMobile])
 
+  /* Belt-and-suspenders: if the viewport ever crosses from desktop into
+     mobile (resize, not just first load), wipe any inline transform/
+     opacity/z-index the coverflow effect left on the card nodes — same
+     DOM nodes get reused across the branch switch, so nothing else
+     would otherwise clear them. */
+  useEffect(() => {
+    if (!isMobile) return
+    const el = trackRef.current
+    if (!el) return
+    el.querySelectorAll('.carousel__item').forEach((item) => {
+      item.style.transform = ''
+      item.style.opacity = ''
+      item.style.zIndex = ''
+    })
+  }, [isMobile])
+
   function scrollByAmount(dir) {
     const el = trackRef.current
     if (!el) return
@@ -313,14 +335,6 @@ function Carousel({ children }) {
   if (isMobile) {
     return (
       <div className="carousel carousel--mobile">
-        {showSwipeHint && (
-          <div className="carousel__swipe-hint visible">
-            <span className="carousel__swipe-arrow">←</span>
-            <span>Swipe to explore</span>
-            <span className="carousel__swipe-arrow">→</span>
-          </div>
-        )}
-
         <div className="carousel__track carousel__track--mobile" ref={trackRef} onScroll={onMobileScroll}>
           {items.map((child, i) => (
             <div className="carousel__item carousel__item--mobile" key={child.key ?? i}>
@@ -342,6 +356,14 @@ function Carousel({ children }) {
             <button className="carousel__arrow-btn" type="button" onClick={() => scrollByCardMobile(1)} disabled={activeDot === dotCount - 1} aria-label="Next">
               ›
             </button>
+          </div>
+        )}
+
+        {showSwipeHint && (
+          <div className="carousel__swipe-hint visible">
+            <span className="carousel__swipe-arrow">←</span>
+            <span>Swipe to explore</span>
+            <span className="carousel__swipe-arrow">→</span>
           </div>
         )}
       </div>
@@ -498,6 +520,7 @@ function AnimatedNights({ value }) {
 
 export default function BookingWizard() {
   const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwC3KdhH5lRljjcAZ9DD5Jsqhp3rKPHkSadO0hXrH0iFjEIUh0JKCy0qxsvFcxkN9OEvw/exec'
+  const FORMSPREE_URL = 'https://formspree.io/f/xqeopbeb'
 
   const [step, setStep] = useState(0)
   const [furthestStep, setFurthestStep] = useState(0)
@@ -634,6 +657,17 @@ export default function BookingWizard() {
         body: JSON.stringify(body),
       })
       setRefCode(code)
+
+      // Notify the site owner — fire-and-forget so a Formspree hiccup
+      // never blocks the confirmation screen or counts as a failed booking.
+      fetch(FORMSPREE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          subject: `New Booking — ${code}`,
+          ...body,
+        }),
+      }).catch(() => {})
     } catch (err) {
       setSubmitError("Couldn't reach the server — check your connection and try again.")
     } finally {
