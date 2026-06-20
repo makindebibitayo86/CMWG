@@ -1,0 +1,412 @@
+/* ── BookingWizard.css ── */
+.wizard-wrap {
+  padding: 2.5rem 0;
+  font-family: 'DM Sans', sans-serif;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+/* ─── Progress bar ─────────────────────────────────────────── */
+.progress-bar { display: flex; align-items: center; gap: 0; margin-bottom: 3rem; }
+.step-dot { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; position: relative; }
+.step-dot:not(:last-child)::after { content: ''; position: absolute; top: 18px; left: 58%; width: 84%; height: 1px; background: rgba(255,255,255,0.1); z-index: 0; }
+.dot { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 14px; font-family: 'DM Sans', sans-serif; color: rgba(250,250,248,0.5); background: #0a0a0a; position: relative; z-index: 1; transition: all 0.25s; padding: 0; cursor: default; }
+.dot.active { border-color: #c9a96e; color: #c9a96e; font-weight: 500; }
+.dot.done { background: #c9a96e; border-color: #c9a96e; color: #0a0a0a; }
+.dot.clickable { cursor: pointer; }
+.dot.clickable:hover { border-color: #c9a96e; color: #c9a96e; transform: scale(1.08); }
+.dot.clickable.done:hover { background: #d4b87a; border-color: #d4b87a; color: #0a0a0a; }
+.dot:disabled { cursor: default; }
+.step-label { font-size: 12.5px; color: rgba(250,250,248,0.4); text-align: center; transition: color 0.25s; }
+.step-label.active { color: #c9a96e; }
+
+/* ─── Fixed-height frame so the wizard doesn't grow/shrink between steps ── */
+.step-frame {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.step-panel { width: 100%; }
+
+.step-heading { font-size: 34px; font-weight: 500; color: #fafaf8; margin: 0 0 0.5rem; font-family: 'Cormorant Garamond', serif; text-align: center; }
+.step-sub { font-size: 18px; color: rgba(250,250,248,0.55); margin: 0 0 2.2rem; text-align: center; }
+
+/* ─── Equal-size swipe carousel (Location / Hotel / View / Payment) ──
+   Same track at every breakpoint — fixed-width cards, drag-to-scroll
+   on desktop, swipe on touch. No per-card scale/opacity. ── */
+.carousel {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.carousel__track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  cursor: grab;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 4px 0.4rem;
+  scrollbar-width: none;
+  user-select: none;
+}
+.carousel__track:active { cursor: grabbing; }
+.carousel__track::-webkit-scrollbar { display: none; }
+
+.carousel__item {
+  flex: 0 0 420px;
+  width: 420px;
+  scroll-snap-align: start;
+}
+
+.photo-card.photo-card--carousel {
+  width: 100%;
+  height: 480px;
+}
+
+/* Swipe hint — only rendered (in JS) on touch-sized viewports */
+.carousel__swipe-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 0.7rem 0 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(201,169,110,0.8);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.carousel__swipe-hint.visible { opacity: 1; }
+.carousel__swipe-arrow {
+  display: inline-block;
+  animation: wiz-swipe-nudge 0.9s ease-in-out infinite alternate;
+}
+.carousel__swipe-arrow:last-child { animation-direction: alternate-reverse; }
+@keyframes wiz-swipe-nudge {
+  from { transform: translateX(-4px); }
+  to   { transform: translateX(4px); }
+}
+
+/* Dot pagination + small round arrow buttons below the track — same at every size */
+.carousel__dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.2rem;
+  margin-top: 1rem;
+}
+.carousel__dot-track { display: flex; align-items: center; gap: 0.45rem; }
+.carousel__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+.carousel__dot.active {
+  width: 22px;
+  border-radius: 3px;
+  background: #c9a96e;
+}
+.carousel__arrow-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.4);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.carousel__arrow-btn:hover:not(:disabled) {
+  border-color: rgba(201,169,110,0.5);
+  color: #c9a96e;
+}
+.carousel__arrow-btn:disabled { opacity: 0.2; cursor: default; }
+
+/* ── Mobile: same track, just narrower fixed-width cards ──
+   Mirrors Destinations.jsx — 85vw cards, snap-to-start. Equal
+   sizing every scroll position is preserved at every breakpoint;
+   this only changes the fixed card width/height. ── */
+@media (max-width: 767px) {
+  .carousel__track {
+    padding: 4px 7.5vw 0.4rem;
+  }
+
+  .carousel__item {
+    flex: 0 0 85vw;
+    width: 85vw;
+  }
+
+  .carousel__item .photo-card.photo-card--carousel {
+    height: 56vw;
+    max-height: 360px;
+    min-height: 260px;
+  }
+}
+
+.photo-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1.5px solid rgba(255,255,255,0.08);
+  background: #111111;
+  transition: all 0.2s;
+  height: 285px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.photo-card:hover { border-color: rgba(201,169,110,0.5); transform: translateY(-2px); }
+.photo-card.selected { border-color: #c9a96e; box-shadow: 0 0 0 3px rgba(201,169,110,0.18); }
+
+.photo-card__img {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.photo-card__img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.05) 100%);
+}
+
+.photo-card__body {
+  position: relative;
+  z-index: 1;
+  padding: 1.2rem 1.3rem;
+}
+
+.photo-card--carousel .photo-card__name { font-size: 26px; }
+.photo-card--carousel .photo-card__sub { font-size: 16px; }
+.photo-card--carousel .photo-card__body { padding: 1.6rem 1.6rem; }
+
+.photo-card__name { font-size: 17px; font-weight: 600; color: #fafaf8; font-family: 'Cormorant Garamond', serif; }
+.photo-card__sub { font-size: 13px; color: rgba(250,250,248,0.7); margin-top: 2px; }
+
+.photo-card.selected .photo-card__name { color: #c9a96e; }
+
+/* View cards without an image (e.g. "No preference") */
+.photo-card--noimg {
+  background: #151515;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.photo-card--noimg .photo-card__body { padding: 0; }
+.photo-card--noimg .photo-card__name { color: rgba(250,250,248,0.6); font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 500; }
+
+/* ─── Centered column wrapping the Review step content ──────── */
+.review-col { max-width: 760px; margin: 0 auto; }
+
+/* ─── Contact fields (Review step) ───────────────────────────── */
+.contact-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 1.8rem; }
+.field-group input[type="text"],
+.field-group input[type="email"],
+.field-group input[type="tel"] {
+  font-family: 'DM Sans', sans-serif;
+  background: #111111;
+  border: 0.5px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 0.95rem 1.1rem;
+  color: #fafaf8;
+  font-size: 1rem;
+}
+.field-group input[type="text"]:focus,
+.field-group input[type="email"]:focus,
+.field-group input[type="tel"]:focus {
+  outline: none;
+  border-color: #c9a96e;
+  box-shadow: 0 0 0 3px rgba(201,169,110,0.18);
+}
+.field-group input[type="text"]::placeholder,
+.field-group input[type="email"]::placeholder,
+.field-group input[type="tel"]::placeholder {
+  color: rgba(250,250,248,0.3);
+}
+
+@media (max-width: 640px) {
+  .contact-row { grid-template-columns: 1fr; }
+}
+
+/* ─── Dates ───────────────────────────────────────────────── */
+.date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 1.8rem; }
+.field-group { display: flex; flex-direction: column; gap: 8px; }
+.field-label { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #c9a96e; }
+.field-group input[type="date"] {
+  font-family: 'DM Sans', sans-serif;
+  background: #111111;
+  border: 0.5px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 0.95rem 1.1rem;
+  color: #fafaf8;
+  color-scheme: dark;
+  font-size: 1rem;
+}
+
+.nights-badge { display: inline-flex; align-items: center; gap: 8px; background: #111111; border: 0.5px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 20px; font-size: 16px; color: rgba(250,250,248,0.55); margin-bottom: 2rem; }
+.nights-badge strong { color: #fafaf8; }
+.nights-badge__range { color: rgba(250,250,248,0.4); font-size: 15px; }
+
+/* ─── Centered column wrapping all dates-step content ────────── */
+.dates-col { max-width: 880px; margin: 0 auto; text-align: center; }
+
+/* ─── Check-in / check-out selector row above the calendar ──── */
+.cal-selector { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+.cal-selector__field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  background: #111111;
+  border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s;
+}
+.cal-selector__field:hover:not(:disabled) { border-color: rgba(201,169,110,0.4); }
+.cal-selector__field--active { border-color: #c9a96e; box-shadow: 0 0 0 3px rgba(201,169,110,0.18); }
+.cal-selector__field:disabled { opacity: 0.4; cursor: not-allowed; }
+.cal-selector__label { font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #c9a96e; }
+.cal-selector__value { font-size: 18px; color: #fafaf8; }
+.cal-selector__arrow { color: rgba(250,250,248,0.3); font-size: 18px; flex-shrink: 0; }
+.cal-hint { font-size: 14.5px; color: rgba(250,250,248,0.45); margin: 1.1rem 0 1.6rem; text-align: center; line-height: 1.5; }
+
+/* ─── Dual-month range calendar ──────────────────────────────── */
+.cal {
+  position: relative;
+  background: #0d0d0d;
+  border: 0.5px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 30px 36px 32px;
+  margin-bottom: 1.8rem;
+}
+.cal__nav {
+  position: absolute;
+  top: 28px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: #fafaf8;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  z-index: 2;
+}
+.cal__nav:hover:not(:disabled) { border-color: #c9a96e; color: #c9a96e; }
+.cal__nav:disabled { opacity: 0.25; cursor: not-allowed; }
+.cal__nav--prev { left: 24px; }
+.cal__nav--next { right: 24px; }
+
+.cal__months { display: flex; gap: 48px; justify-content: center; }
+.cal__month { flex: 1; min-width: 0; }
+.cal__month + .cal__month { border-left: 0.5px solid rgba(255,255,255,0.1); padding-left: 48px; }
+.cal__month-label { text-align: center; font-family: 'Cormorant Garamond', serif; font-size: 21px; color: #fafaf8; margin-bottom: 18px; }
+.cal__weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(250,250,248,0.35); padding-bottom: 10px; }
+.cal__grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 8px; }
+
+.cal__cell {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: #fafaf8;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cal__cell--empty { cursor: default; visibility: hidden; }
+.cal__cell--disabled { color: rgba(250,250,248,0.15); cursor: not-allowed; }
+.cal__cell:not(.cal__cell--disabled):not(.cal__cell--empty):hover { background: rgba(255,255,255,0.08); }
+.cal__cell--in-range { background: rgba(201,169,110,0.14); border-radius: 0; }
+.cal__cell--start, .cal__cell--end { background: #c9a96e; color: #0a0a0a; font-weight: 600; }
+.cal__cell--today { position: relative; }
+.cal__cell--today:not(.cal__cell--start):not(.cal__cell--end)::after {
+  content: '';
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #c9a96e;
+}
+
+/* ─── Payment ─────────────────────────────────────────────── */
+
+.summary-card { background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.6rem; margin-bottom: 2rem; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 0.5px solid rgba(255,255,255,0.06); font-size: 15px; }
+.summary-row:last-child { border-bottom: none; font-size: 17px; font-weight: 500; padding-top: 16px; }
+.summary-row span:first-child { color: rgba(250,250,248,0.5); }
+.summary-row span:last-child { color: #fafaf8; }
+.total-price { color: #c9a96e !important; font-size: 21px !important; }
+
+/* ─── Buttons ─────────────────────────────────────────────── */
+.btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
+
+@media (max-width: 767px) {
+  .btn-row { justify-content: center; }
+  .btn-row .btn-next { flex: 1; max-width: 320px; text-align: center; }
+}
+.btn-back { background: transparent; border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 13px 26px; font-size: 15px; color: rgba(250,250,248,0.6); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+.btn-back:hover { color: #fafaf8; border-color: rgba(255,255,255,0.3); }
+.btn-next { background: #c9a96e; border: none; border-radius: 12px; padding: 13px 34px; font-size: 15px; font-weight: 500; color: #0a0a0a; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+.btn-next:hover:not(:disabled) { background: #d4b87a; }
+.btn-next:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── Confirmation ────────────────────────────────────────── */
+.confirmed-wrap { text-align: center; padding: 3rem 1rem; }
+.confirmed-icon { width: 64px; height: 64px; line-height: 64px; border-radius: 50%; background: rgba(201,169,110,0.12); border: 1.5px solid #c9a96e; color: #c9a96e; font-size: 28px; margin: 0 auto 1.4rem; }
+.confirmed-title { font-size: 28px; font-weight: 500; color: #fafaf8; margin-bottom: 0.6rem; font-family: 'Cormorant Garamond', serif; }
+.confirmed-sub { font-size: 15px; color: rgba(250,250,248,0.55); margin-bottom: 1.8rem; line-height: 1.6; max-width: 480px; margin-left: auto; margin-right: auto; }
+.ref-code { font-family: monospace; font-size: 16px; color: #c9a96e; background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 10px 24px; display: inline-block; letter-spacing: 0.12em; }
+.confirmed-reset-note { font-size: 13px; color: rgba(250,250,248,0.35); margin-top: 1.4rem; }
+
+.submit-error { color: #e08a8a; font-size: 14px; text-align: center; margin: -0.6rem 0 1.4rem; }
+
+@media (max-width: 640px) {
+  .date-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .cal { padding: 50px 14px 18px; }
+  .cal__months { flex-direction: column; gap: 26px; }
+  .cal__month { max-width: none; }
+  .cal__month + .cal__month { border-left: none; padding-left: 0; padding-top: 22px; border-top: 0.5px solid rgba(255,255,255,0.1); }
+  .cal__nav { top: 14px; }
+  .cal-selector { flex-direction: column; gap: 8px; }
+  .cal-selector__arrow { display: none; }
+}

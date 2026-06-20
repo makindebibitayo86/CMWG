@@ -1,0 +1,371 @@
+/* ── SearchPanel.css ── */
+
+/* ─── Outer shell ─────────────────────────────────────────── */
+.search-panel {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ─── Glass bar ───────────────────────────────────────────── */
+.sp-inner {
+  display: grid;
+  grid-template-columns: 2fr auto 1fr auto 1fr auto 1.4fr auto;
+  align-items: stretch;
+  background: rgba(12, 12, 12, 0.82);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(201, 169, 110, 0.22);
+  border-radius: 18px;
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  overflow: visible;
+}
+
+/* ─── Dividers ────────────────────────────────────────────── */
+.sp-divider {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  align-self: stretch;
+  margin: 0.85rem 0;
+}
+
+/* ─── Field ───────────────────────────────────────────────── */
+.sp-field {
+  position: relative;
+  padding: 0.9rem 1.3rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-radius: 0;
+}
+
+.sp-field:first-child {
+  border-radius: 17px 0 0 17px;
+}
+
+.sp-field:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ─── Label ───────────────────────────────────────────────── */
+.sp-label {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  font-size: 0.63rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #c9a96e;
+  margin-bottom: 0.42rem;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+  pointer-events: none;
+}
+
+.sp-label svg {
+  flex-shrink: 0;
+}
+
+/* ─── Input ───────────────────────────────────────────────── */
+.sp-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fafaf8;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 400;
+  width: 100%;
+  display: block;
+}
+
+.sp-input::placeholder {
+  color: rgba(250, 250, 248, 0.3);
+}
+
+.sp-input--date {
+  color-scheme: dark;
+  cursor: pointer;
+}
+
+/* Guests trigger — looks like text, acts like a button */
+.sp-input--guests-btn {
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  font-size: 0.88rem;
+  font-weight: 400;
+  color: #fafaf8;
+  white-space: nowrap;
+  width: 100%;
+  background: transparent;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Checkmark badge when destination is confirmed */
+.sp-field__selected-badge {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6ee7b7;
+  font-size: 0.8rem;
+  pointer-events: none;
+}
+
+/* ─── Autocomplete dropdown ───────────────────────────────── */
+.sp-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 320px;
+  background: #141414;
+  border: 1px solid rgba(201, 169, 110, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+  z-index: 200;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+  list-style: none;
+  padding: 0.4rem 0;
+  margin: 0;
+}
+
+.sp-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.78rem 1.2rem;
+  cursor: pointer;
+  transition: background 0.14s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.sp-dropdown__item:hover {
+  background: rgba(201, 169, 110, 0.08);
+}
+
+.sp-dropdown__item--loading {
+  color: rgba(250, 250, 248, 0.4);
+  font-size: 0.82rem;
+  justify-content: center;
+  cursor: default;
+  gap: 0.5rem;
+}
+
+.sp-dropdown__icon {
+  color: #c9a96e;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.sp-dropdown__name {
+  font-size: 0.86rem;
+  color: #fafaf8;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-dropdown__type {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(250, 250, 248, 0.3);
+  flex-shrink: 0;
+}
+
+/* ─── Loading spinner ─────────────────────────────────────── */
+.sp-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(201, 169, 110, 0.25);
+  border-top-color: #c9a96e;
+  border-radius: 50%;
+  animation: sp-spin 0.7s linear infinite;
+}
+
+@keyframes sp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Guests popover ──────────────────────────────────────── */
+.sp-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 270px;
+  background: #141414;
+  border: 1px solid rgba(201, 169, 110, 0.2);
+  border-radius: 16px;
+  padding: 0.6rem 1.1rem 0.9rem;
+  z-index: 200;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+}
+
+.sp-popover__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sp-popover__row:last-of-type {
+  border-bottom: none;
+}
+
+.sp-popover__row-label span {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #fafaf8;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.sp-popover__row-label small {
+  font-size: 0.7rem;
+  color: rgba(250, 250, 248, 0.38);
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Counter */
+.sp-counter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sp-counter__btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(201, 169, 110, 0.4);
+  background: transparent;
+  color: #c9a96e;
+  font-size: 1.05rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  line-height: 1;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.sp-counter__btn:hover:not(:disabled) {
+  background: rgba(201, 169, 110, 0.12);
+  border-color: #c9a96e;
+}
+
+.sp-counter__btn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.sp-counter__val {
+  font-size: 0.95rem;
+  font-weight: 500;
+  min-width: 18px;
+  text-align: center;
+  color: #fafaf8;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Done button */
+.sp-popover__done {
+  margin-top: 0.7rem;
+  width: 100%;
+  padding: 0.55rem;
+  background: rgba(201, 169, 110, 0.1);
+  border: 1px solid rgba(201, 169, 110, 0.28);
+  border-radius: 10px;
+  color: #c9a96e;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.sp-popover__done:hover {
+  background: rgba(201, 169, 110, 0.18);
+}
+
+/* ─── Search button ───────────────────────────────────────── */
+.sp-search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #c9a96e;
+  color: #0a0a0a;
+  border: none;
+  border-radius: 0 17px 17px 0;
+  padding: 0 2rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  white-space: nowrap;
+  min-width: 110px;
+}
+
+.sp-search-btn:hover {
+  background: #d4b87a;
+  transform: translateY(-1px);
+}
+
+.sp-search-btn:active {
+  transform: translateY(0);
+}
+
+/* ─── Validation error ────────────────────────────────────── */
+.sp-error {
+  margin-top: 0.75rem;
+  padding-left: 0.2rem;
+  font-size: 0.78rem;
+  color: #fca5a5;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .sp-inner {
+    grid-template-columns: 1fr;
+    border-radius: 18px;
+  }
+
+  .sp-field {
+    border-radius: 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .sp-field:first-child {
+    border-radius: 17px 17px 0 0 !important;
+  }
+
+  .sp-divider {
+    display: none;
+  }
+
+  .sp-dropdown {
+    width: 100%;
+  }
+
+  .sp-search-btn {
+    border-radius: 0 0 17px 17px;
+    padding: 1.1rem;
+    width: 100%;
+  }
+}

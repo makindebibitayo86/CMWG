@@ -22,6 +22,19 @@
   overflow: hidden;
 }
 
+/* ─── Search Section (paste after .booking-hero block) ───── */
+.booking-search-section {
+  position: relative;
+  z-index: 10;
+  padding: 2.5rem;
+}
+
+@media (max-width: 960px) {
+  .booking-search-section {
+    padding: 1.5rem 1rem;
+  }
+}
+
 /* Two-column container */
 .booking-hero__columns {
   position: relative;
